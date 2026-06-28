@@ -1369,14 +1369,28 @@ function PlayerPage({player}){
   const sbStats=getSBStats(player);
   const sbByGame=getSBByGame(player);
   const mh=MEASUREMENT[player]||[];
-  const latest=mh.length?mh[mh.length-1]:null;
-  const prev2=mh.length>=2?mh[mh.length-2]:null;
-  const bestBlast=mh.length?Math.max(...mh.map(d=>d.batSpeed||0)):0;
-  const bestSpeed=mh.length?Math.max(...mh.filter(d=>d.pitchMound).map(d=>d.pitchMound),0):0;
-  const bestRun=mh.length?Math.min(...mh.map(d=>d.run)):0;
-  const isNewBlast=latest&&(latest.batSpeed||0)>=bestBlast;
-  const isNewSpeed=latest&&latest.pitchMound>=bestSpeed;
-  const isNewRun=latest&&latest.run<=bestRun;
+  const swingEntry=mh.find(e=>e.type==="swing");
+  const pitchEntry=mh.find(e=>e.type==="pitch");
+  const baserunEntry=mh.find(e=>e.type==="baserun");
+  const latest=swingEntry||pitchEntry||baserunEntry?{
+    batSpeed:swingEntry?swingEntry.avg:null,
+    batSpeedMax:swingEntry?swingEntry.max:null,
+    pitchMound:pitchEntry?pitchEntry.mound:null,
+    pitchPD:pitchEntry?pitchEntry.pd:null,
+    run1b:baserunEntry?baserunEntry.dash:null,
+    run2b:baserunEntry?baserunEntry.d2:null,
+    run3b:baserunEntry?baserunEntry.d3:null,
+    runHR:baserunEntry?baserunEntry.hr:null,
+    date:pitchEntry?.date||baserunEntry?.date||null,
+    swingHistory:swingEntry?swingEntry.history:[],
+  }:null;
+  const prev2=null;
+  const bestBlast=swingEntry?swingEntry.max:0;
+  const bestSpeed=pitchEntry?pitchEntry.mound:0;
+  const bestRun=baserunEntry?baserunEntry.dash:0;
+  const isNewBlast=false;
+  const isNewSpeed=false;
+  const isNewRun=false;
   const anyNew=isNewBlast||isNewSpeed||isNewRun;
 
   useEffect(()=>{
@@ -1830,10 +1844,10 @@ function PlayerPage({player}){
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:10}}>
                 {[
-                  {l:"バットスピード",v:latest.batSpeed,u:"mph",prev:prev2?.batSpeed,c:C.accent,best:Math.max(...mh.map(d=>d.batSpeed))},
-                  {l:"オンプレーン率",v:latest.onPlane,u:"%",prev:prev2?.onPlane,c:"#E8943A",best:Math.max(...mh.map(d=>d.onPlane))},
-                  {l:"パワー",v:latest.power,u:"",prev:prev2?.power,c:C.purple,best:Math.max(...mh.map(d=>d.power))},
-                  {l:"バット角度",v:latest.batAngle,u:"°",prev:prev2?.batAngle,c:"#F4A460",best:Math.max(...mh.map(d=>d.batAngle))},
+                  {l:"スイング平均",v:latest.batSpeed,u:"km/h",prev:null,c:C.accent,best:bestBlast},
+                  {l:"スイングMAX",v:latest.batSpeedMax,u:"km/h",prev:null,c:"#E8943A",best:bestBlast},
+                  {l:"マウンド球速",v:latest.pitchMound,u:"km/h",prev:null,c:C.purple,best:bestSpeed},
+                  {l:"プルダウン球速",v:latest.pitchPD,u:"km/h",prev:null,c:"#F4A460",best:bestSpeed},
                 ].map(m=>(
                   <div key={m.l} style={{background:"rgba(0,0,0,0.2)",borderRadius:10,padding:"10px",border:`1px solid rgba(196,118,58,0.15)`}}>
                     <div style={{fontSize:9,color:C.sub,marginBottom:3}}>{m.l}</div>
@@ -1853,7 +1867,7 @@ function PlayerPage({player}){
               </div>
               {/* バットスピード推移 */}
               <div style={{fontSize:9,color:C.sub,marginBottom:4,letterSpacing:1}}>バットスピード推移</div>
-              <Spark data={mh.map(d=>({v:d.batSpeed}))} color={C.accent} h={42}/>
+              <Spark data={(swingEntry?.history||[]).filter(h=>h.avg).map(d=>({v:d.avg}))} color={C.accent} h={42}/>
             </div>
 
             {/* ══ ベースランニング ══ */}
@@ -1864,10 +1878,10 @@ function PlayerPage({player}){
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:10}}>
                 {[
-                  {l:"駆け抜け（1塁）",key:"run1b",best:Math.min(...mh.map(d=>d.run1b)),inv:true},
-                  {l:"2塁打",         key:"run2b",best:Math.min(...mh.map(d=>d.run2b)),inv:true},
-                  {l:"3塁打",         key:"run3b",best:Math.min(...mh.map(d=>d.run3b)),inv:true},
-                  {l:"ホームラン",    key:"runHR",best:Math.min(...mh.map(d=>d.runHR)),inv:true},
+                  {l:"駆け抜け（1塁）",key:"run1b",best:baserunEntry?baserunEntry.dash:0,inv:true},
+                  {l:"2塁打",         key:"run2b",best:baserunEntry?baserunEntry.d2:0,inv:true},
+                  {l:"3塁打",         key:"run3b",best:baserunEntry?baserunEntry.d3:0,inv:true},
+                  {l:"ホームラン",    key:"runHR",best:baserunEntry?baserunEntry.hr:0,inv:true},
                 ].map(m=>{
                   const cur=latest[m.key];
                   const p2=prev2?.[m.key];
