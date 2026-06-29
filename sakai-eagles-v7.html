@@ -1680,8 +1680,29 @@ function PlayerPage({player}){
 
           {/* 得点圏（RISP） */}
           {RISP_STATS[player]&&(()=>{
-            const risp=RISP_STATS[player];
-            const ss=SEASON_STATS[player];
+            const risp=RISP_STATS[player]||{pa:0,ab:0,h:0,avg:0,ops:0,rbi:0};
+            // ss: rowsから動的計算（teamFilter対応）
+            const allPlayerStats=([...new Set(filteredRows.map(r=>r.player))]).map(p=>({
+              p, s:calcStats(ALL_RECORDS.filter(r=>r.player===p&&(teamFilter==="合計"||r.team===teamFilter)&&(typeFilter==="合計"||r.gameType===typeFilter)))
+            })).filter(x=>x.s.ab>=3);
+            const rankOf=(arr,fn,asc=false)=>{
+              const sorted=[...arr].sort((a,b)=>asc?fn(a)-fn(b):fn(b)-fn(a));
+              const idx=sorted.findIndex(x=>x.p===player);
+              return idx>=0?idx+1:null;
+            };
+            const ss=season.pa>0?{
+              avg:season.avgN, obp:season.obpN, slg:season.slgN, ops:season.opsN,
+              kp:season.pa>0?season.k/season.pa*100:0,
+              bbp:season.pa>0?season.bb/season.pa*100:0,
+              rankAVG:rankOf(allPlayerStats,x=>x.s.avgN),
+              rankOPS:rankOf(allPlayerStats,x=>x.s.opsN),
+              rankOBP:rankOf(allPlayerStats,x=>x.s.obpN),
+              rankSLG:rankOf(allPlayerStats,x=>x.s.slgN),
+              rankRBI:rankOf(allPlayerStats,x=>x.s.rbi),
+              rankR:rankOf(allPlayerStats,x=>x.s.r),
+              rankK:rankOf(allPlayerStats,x=>x.s.k/Math.max(x.s.pa,1),true),
+              rankBB:rankOf(allPlayerStats,x=>x.s.bb/Math.max(x.s.pa,1),false),
+            }:null;
             return(
               <Card style={{background:"rgba(76,175,114,0.05)",border:`1px solid rgba(76,175,114,0.18)`}}>
                 <SL color={C.green}>🎯 得点圏（RISP）成績</SL>
