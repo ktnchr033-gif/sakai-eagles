@@ -742,11 +742,11 @@ function enrichRecords(records) {
         num: parsed.num,
       };
     } else {
-      // 既存データ：opponentはそのまま、gameTypeも元を保持
+      // 既存データ：opponentはそのまま、dateも元のまま保持
       return {
         ...r,
-        date: null,
-        month: null,
+        date: r.date || null,
+        month: r.month || null,
         num: "",
       };
     }
@@ -1435,9 +1435,12 @@ function PlayerPage({player}){
   const season=calcStats(rows);
 
   // ss: フィルター済みrowsから動的計算（全タブで使用）
-  const allPlayerStatsGlobal=[...new Set(filteredRows.map(r=>r.player))].map(p=>({
+  // 順位計算：teamFilter+typeFilter両方適用（打席数1以上で対象）
+  const allPlayerStatsGlobal=[...new Set(ALL_RECORDS.filter(r=>
+    (teamFilter==="合計"||r.team===teamFilter)&&(typeFilter==="合計"||r.gameType===typeFilter)
+  ).map(r=>r.player))].map(p=>({
     p, s:calcStats(ALL_RECORDS.filter(r=>r.player===p&&(teamFilter==="合計"||r.team===teamFilter)&&(typeFilter==="合計"||r.gameType===typeFilter)))
-  })).filter(x=>x.s.ab>=3);
+  })).filter(x=>x.s.pa>=1);
   const rankOfG=(arr,fn,asc=false)=>{
     const sorted=[...arr].sort((a,b)=>asc?fn(a)-fn(b):fn(b)-fn(a));
     const i=sorted.findIndex(x=>x.p===player);
