@@ -1391,7 +1391,7 @@ function PlayerPage({player}){
   const isNewBlast=false;
   const isNewSpeed=false;
   const isNewRun=false;
-  const anyNew=isNewBlast||isNewSpeed||isNewRun;
+  const anyNew=false;
 
   useEffect(()=>{
     if(anyNew){setBurst(true);setTimeout(()=>setBurst(false),2800);}
@@ -1828,7 +1828,7 @@ function PlayerPage({player}){
 
         {/* ── 📊 測定値 ── */}
         {sub==="measure"&&<>
-          {mh.length===0?(
+          {!swingEntry&&!pitchEntry&&!baserunEntry?(
             <div style={{textAlign:"center",padding:"40px 20px",color:C.sub}}>
               <div style={{fontSize:32,marginBottom:8}}>📋</div>
               <div style={{fontSize:14}}>この選手の測定データはまだありません</div>
@@ -1906,7 +1906,7 @@ function PlayerPage({player}){
               </div>
               {/* 駆け抜け推移 */}
               <div style={{fontSize:9,color:C.sub,marginBottom:4,letterSpacing:1}}>駆け抜け（1塁）推移</div>
-              <Spark data={mh.map(d=>({v:d.run1b}))} color={C.green} invert h={42}/>
+              <Spark data={baserunEntry?[{v:baserunEntry.dash}]:[]} color={C.green} invert h={42}/>
             </div>
 
             {/* ══ 投球速度 ══ */}
@@ -1917,8 +1917,8 @@ function PlayerPage({player}){
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:10}}>
                 {[
-                  {l:"マウンド",key:"pitchMound",c:C.blue,best:Math.max(...mh.map(d=>d.pitchMound||0).filter(v=>v>0))},
-                  {l:"プルダウン",key:"pitchPulldown",c:"#7B68EE",best:Math.max(...mh.map(d=>d.pitchPulldown||0).filter(v=>v>0))},
+                  {l:"マウンド",key:"pitchMound",c:C.blue,best:bestSpeed},
+                  {l:"プルダウン",key:"pitchPD",c:"#7B68EE",best:bestSpeed},
                 ].map(m=>{
                   const cur=latest[m.key];
                   const p2=prev2?.[m.key];
@@ -2179,6 +2179,7 @@ function PlayerPage({player}){
 // ═══════════════════════════════════════════════════════════════
 function TeamPage(){
   const [sort,setSort]=useState("ops");
+  const [mainTab,setMainTab]=useState("stats");
   const [teamFilter,setTeamFilter]=useState("合計");
   const [typeFilter,setTypeFilter]=useState("合計");
 
@@ -2221,13 +2222,34 @@ function TeamPage(){
   const totalSB = filteredSBLog.reduce((s,r)=>s+r.sb, 0);
   const totalCS = filteredSBLog.reduce((s,r)=>s+r.cs, 0);
 
+  const [rankTab,setRankTab]=useState("batting");
+  const [rankTeam,setRankTeam]=useState("合計");
+  const rankBaseRecords=rankTeam==="合計"?ALL_RECORDS:rankTeam==="ジュニア"?GAME_RECORDS:rankTeam==="レギュラー"?REG_GAME_RECORDS:SJ_GAME_RECORDS;
+  const rankPlayers=[...new Set(rankBaseRecords.map(r=>r.player))];
+  const teamColor2=(t)=>t==="レギュラー"?C.blue:t==="ジュニア"?C.accent:C.purple;
+  const medal=(i)=>i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`;
+  const getTC=(p)=>REG_PLAYERS_MANUAL.includes(p)?"レギュラー":JR_PLAYERS_MANUAL.includes(p)?"ジュニア":"SJr";
+
+  const battingRanks=rankPlayers.map(p=>{
+    const s=calcStats(rankBaseRecords.filter(r=>r.player===p));
+    const sb=ALL_SB_LOG.filter(r=>r.player===p).reduce((a,r)=>a+r.sb,0);
+    return {p,s,sb,tc:getTC(p)};
+  }).filter(x=>x.s.ab>=3);
+
+  const measureRanks=rankPlayers.map(p=>{
+    const mh=MEASUREMENT[p]||[];
+    const sw=mh.find(e=>e.type==="swing");
+    const pt=mh.find(e=>e.type==="pitch");
+    const br=mh.find(e=>e.type==="baserun");
+    return {p,tc:getTC(p),swingMax:sw?sw.max:null,swingAvg:sw?sw.avg:null,mound:pt?pt.mound:null,pd:pt?pt.pd:null,dash:br?br.dash:null,d2:br?br.d2:null};
+  }).filter(x=>x.swingMax||x.mound||x.dash);
+
   const playerRanks=[...new Set(filteredRecords.map(r=>r.player))].map(p=>{
     const s=calcStats(filteredRecords.filter(r=>r.player===p));
     const mh=MEASUREMENT[p]||[];
-    const blastGrow=mh.length>=2?(mh[mh.length-1].batSpeed||0)-(mh[0].batSpeed||0):null;
-    const speedGrow=mh.length>=2?(mh[mh.length-1].pitchMound||0)-(mh[0].pitchMound||0):null;
-    const runGrow=mh.length>=2&&mh[0].run1b&&mh[mh.length-1].run1b?mh[0].run1b-mh[mh.length-1].run1b:null;
-    return {p,s,blastGrow,speedGrow,runGrow};
+    const sw=mh.find(e=>e.type==="swing");
+    const blastGrow=sw&&sw.history&&sw.history.length>=2?sw.history[sw.history.length-1].avg-sw.history[0].avg:null;
+    return {p,s,blastGrow};
   }).filter(x=>x.s.ab>=3).sort((a,b)=>{
     if(sort==="ops") return b.s.opsN-a.s.opsN;
     if(sort==="avg") return b.s.avgN-a.s.avgN;
@@ -2321,7 +2343,142 @@ function TeamPage(){
           ))}
         </div>
       </div>
-      <div style={{padding:"13px 14px 0"}}>
+      {/* メインタブ：チーム統計 / ランキング */}
+      <div style={{display:"flex",borderBottom:`1px solid ${C.border}`}}>
+        {[{id:"stats",l:"チーム統計",icon:"📊"},{id:"ranking",l:"ランキング",icon:"🏆"}].map(t=>(
+          <button key={t.id} onClick={()=>setMainTab(t.id)}
+            style={{flex:1,background:"none",border:"none",padding:"10px 4px",cursor:"pointer",
+              fontSize:12,fontWeight:800,
+              color:mainTab===t.id?(t.id==="stats"?C.accent:C.gold):C.sub,
+              borderBottom:mainTab===t.id?(t.id==="stats"?`2px solid ${C.accent}`:`2px solid ${C.gold}`):"2px solid transparent"}}>
+            {t.icon} {t.l}
+          </button>
+        ))}
+      </div>
+
+      {/* ランキングページ */}
+      {mainTab==="ranking"&&<div style={{padding:"12px 14px 80px"}}>
+        {/* チームフィルター */}
+        <div style={{display:"flex",gap:5,marginBottom:12,flexWrap:"wrap"}}>
+          {[{v:"合計",c:"#fff"},{v:"レギュラー",c:C.blue},{v:"ジュニア",c:C.accent},{v:"スーパーJr",c:C.purple}].map(({v,c})=>(
+            <button key={v} onClick={()=>setRankTeam(v==="スーパーJr"?"スーパーJr":v)}
+              style={{background:rankTeam===v?`${c}22`:"rgba(255,255,255,0.05)",
+                color:rankTeam===v?c:C.sub,border:`1px solid ${rankTeam===v?c:C.border}`,
+                borderRadius:20,padding:"5px 12px",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+              {v}
+            </button>
+          ))}
+        </div>
+        {/* ランキング種別タブ */}
+        <div style={{display:"flex",gap:4,marginBottom:12,overflowX:"auto"}}>
+          {[
+            {id:"batting",l:"打撃"},
+            {id:"ops",l:"OPS"},
+            {id:"sb",l:"盗塁"},
+            {id:"swing",l:"スイング"},
+            {id:"pitch",l:"球速"},
+            {id:"dash",l:"ベースラン"},
+          ].map(t=>(
+            <button key={t.id} onClick={()=>setRankTab(t.id)}
+              style={{background:rankTab===t.id?C.gold+"22":"rgba(255,255,255,0.05)",
+                color:rankTab===t.id?C.gold:C.sub,border:`1px solid ${rankTab===t.id?C.gold:C.border}`,
+                borderRadius:20,padding:"5px 12px",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
+              {t.l}
+            </button>
+          ))}
+        </div>
+
+        {/* 打率ランキング */}
+        {rankTab==="batting"&&<>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>打率ランキング</div>
+          {[...battingRanks].sort((a,b)=>b.s.avgN-a.s.avgN).map(({p,s,tc},i)=>(
+            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
+              <div style={{fontSize:11,color:C.sub}}>{s.pa}打席</div>
+              <div style={{fontSize:20,fontWeight:900,color:C.accent,minWidth:48,textAlign:"right"}}>{s.avg}</div>
+            </div>
+          ))}
+        </>}
+
+        {/* OPSランキング */}
+        {rankTab==="ops"&&<>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>OPSランキング</div>
+          {[...battingRanks].sort((a,b)=>b.s.opsN-a.s.opsN).map(({p,s,tc},i)=>(
+            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
+              <div style={{fontSize:11,color:C.sub}}>{s.ab}打数</div>
+              <div style={{fontSize:20,fontWeight:900,color:C.gold,minWidth:48,textAlign:"right"}}>{s.ops}</div>
+            </div>
+          ))}
+        </>}
+
+        {/* 盗塁ランキング */}
+        {rankTab==="sb"&&<>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>盗塁ランキング</div>
+          {[...battingRanks].sort((a,b)=>b.sb-a.sb).filter(x=>x.sb>0).map(({p,sb,tc},i)=>(
+            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
+              <div style={{fontSize:20,fontWeight:900,color:C.green,minWidth:48,textAlign:"right"}}>{sb}<span style={{fontSize:10,color:C.sub}}> 盗</span></div>
+            </div>
+          ))}
+        </>}
+
+        {/* スイングスピードランキング */}
+        {rankTab==="swing"&&<>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>スイングスピードMAXランキング（km/h）</div>
+          {[...measureRanks].filter(x=>x.swingMax).sort((a,b)=>b.swingMax-a.swingMax).map(({p,swingMax,swingAvg,tc},i)=>(
+            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
+              <div style={{fontSize:11,color:C.sub}}>平均{swingAvg?.toFixed(1)}</div>
+              <div style={{fontSize:20,fontWeight:900,color:C.accent,minWidth:52,textAlign:"right"}}>{swingMax}<span style={{fontSize:10,color:C.sub}}> MAX</span></div>
+            </div>
+          ))}
+        </>}
+
+        {/* 球速ランキング */}
+        {rankTab==="pitch"&&<>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>マウンド球速ランキング（km/h）</div>
+          {[...measureRanks].filter(x=>x.mound).sort((a,b)=>b.mound-a.mound).map(({p,mound,pd,tc},i)=>(
+            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
+              <div style={{fontSize:11,color:C.sub}}>PD:{pd}</div>
+              <div style={{fontSize:20,fontWeight:900,color:C.blue,minWidth:52,textAlign:"right"}}>{mound}<span style={{fontSize:10,color:C.sub}}> km/h</span></div>
+            </div>
+          ))}
+        </>}
+
+        {/* ベースランランキング */}
+        {rankTab==="dash"&&<>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>駆け抜けタイムランキング（秒・少ない順）</div>
+          {[...measureRanks].filter(x=>x.dash).sort((a,b)=>a.dash-b.dash).map(({p,dash,d2,tc},i)=>(
+            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
+              <div style={{fontSize:11,color:C.sub}}>2塁:{d2}秒</div>
+              <div style={{fontSize:20,fontWeight:900,color:C.green,minWidth:52,textAlign:"right"}}>{dash}<span style={{fontSize:10,color:C.sub}}> 秒</span></div>
+            </div>
+          ))}
+        </>}
+      </div>}
+
+      <div style={{padding:"13px 14px 0",display:mainTab==="ranking"?"none":"block"}}>
 
         {/* チーム打撃 */}
         <SL>チーム通算打撃成績</SL>
@@ -3264,7 +3421,7 @@ function InputPage(){
   const [risp,setRisp]=useState(false);
   const [atbats,setAtbats]=useState([]);
   const [sbLog,setSbLog]=useState([]);
-  const [mform,setMform]=useState({player:"",batSpeed:"",onPlane:"",power:"",batAngle:"",pitchMound:"",pitchPulldown:"",run1b:"",run2b:"",run3b:"",runHR:""});
+  const [mform,setMform]=useState({player:"",batSpeed:"",onPlane:"",power:"",batAngle:"",pitchMound:"",pitchPD:"",run1b:"",run2b:"",run3b:"",runHR:""});
   const mf=(k,v)=>setMform(p=>({...p,[k]:v}));
 
   const RESULTS=[
@@ -3558,7 +3715,7 @@ function InputPage(){
           </div>
           <div style={{fontSize:10,color:C.blue,fontWeight:700,letterSpacing:2,marginBottom:8}}>⚡ 投球速度</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
-            {[["マウンド (km/h)","pitchMound","例:85"],["プルダウン (km/h)","pitchPulldown","例:90"]].map(([l,k,ph])=>(
+            {[["マウンド (km/h)","pitchMound","例:85"],["プルダウン (km/h)","pitchPD","例:90"]].map(([l,k,ph])=>(
               <div key={k}><label style={{fontSize:10,color:C.blue,fontWeight:700,display:"block",marginBottom:4}}>{l}</label>
               <input type="number" value={mform[k]||""} onChange={e=>mf(k,e.target.value)} placeholder={ph} style={{...mns,fontSize:16,padding:"10px 4px",borderColor:C.blue+"44"}}/></div>
             ))}
