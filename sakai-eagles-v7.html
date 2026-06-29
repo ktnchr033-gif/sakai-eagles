@@ -578,6 +578,25 @@ const REG_VS_LR_STATS = {
   "木下": {rAVG:0.333,rOPS:0.772,lAVG:0.000,lOPS:0.111},
   "櫻谷": {rAVG:0.317,rOPS:0.952,lAVG:0.077,lOPS:0.220},
 };
+const SJ_VS_LR_STATS = {
+  "上田":{rPA:5,rAB:5,rH:14,rAVG:2.8,rOPS:5.6,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "上阪":{rPA:6,rAB:5,rH:20,rAVG:4.0,rOPS:7.5,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "中":{rPA:21,rAB:18,rH:38,rAVG:2.111,rOPS:4.174,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "佐渡":{rPA:21,rAB:20,rH:38,rAVG:1.9,rOPS:3.957,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "勇元":{rPA:12,rAB:11,rH:26,rAVG:2.364,rOPS:4.614,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "北室":{rPA:16,rAB:13,rH:38,rAVG:2.923,rOPS:5.716,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "安岡":{rPA:22,rAB:19,rH:47,rAVG:2.474,rOPS:4.905,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "岡田":{rPA:9,rAB:6,rH:26,rAVG:4.333,rOPS:7.555,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "川中":{rPA:20,rAB:18,rH:42,rAVG:2.333,rOPS:4.644,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "木下え":{rPA:13,rAB:11,rH:26,rAVG:2.364,rOPS:4.881,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "櫻谷し":{rPA:12,rAB:10,rH:38,rAVG:3.8,rOPS:7.233,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "武原":{rPA:16,rAB:16,rH:36,rAVG:2.25,rOPS:4.5,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "河井":{rPA:8,rAB:7,rH:15,rAVG:2.143,rOPS:4.143,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "田代":{rPA:22,rAB:21,rH:42,rAVG:2.0,rOPS:4.003,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "石原":{rPA:24,rAB:22,rH:43,rAVG:1.955,rOPS:3.92,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "米田":{rPA:15,rAB:12,rH:32,rAVG:2.667,rOPS:5.166,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0},
+  "金沢":{rPA:13,rAB:12,rH:27,rAVG:2.25,rOPS:4.583,lPA:0,lAB:0,lH:0,lAVG:0,lOPS:0}
+};
 
 // レギュラーチーム 得点圏成績
 const REG_RISP_STATS = {
@@ -1288,7 +1307,7 @@ function calcStats(rows) {
   const fmt=n=>n===0?".000":n.toFixed(3).replace(/^0/,"");
   return {...t,tb,avg:fmt(avg),obp:fmt(obp),slg:fmt(slg),ops:fmt(obp+slg),
     avgN:avg,obpN:obp,slgN:slg,opsN:obp+slg,
-    games:new Set(rows.map(r=>r.opponent)).size};
+    games:new Set(rows.map(r=>(r.date||"no-date")+"|"+r.opponent+"|"+(r.team||""))).size};
 }
 
 // ─── デザイン ────────────────────────────────────────────────
@@ -1425,19 +1444,19 @@ function PlayerPage({player}){
     const i=sorted.findIndex(x=>x.p===player);
     return i>=0?i+1:null;
   };
-  const ss=season.pa>0?{
+  const ss={
     avg:season.avgN, obp:season.obpN, slg:season.slgN, ops:season.opsN,
-    kp:season.k/season.pa*100,
-    bbp:season.bb/season.pa*100,
-    rankAVG:rankOfG(allPlayerStatsGlobal,x=>x.s.avgN),
-    rankOPS:rankOfG(allPlayerStatsGlobal,x=>x.s.opsN),
-    rankOBP:rankOfG(allPlayerStatsGlobal,x=>x.s.obpN),
-    rankSLG:rankOfG(allPlayerStatsGlobal,x=>x.s.slgN),
-    rankRBI:rankOfG(allPlayerStatsGlobal,x=>x.s.rbi),
-    rankR:rankOfG(allPlayerStatsGlobal,x=>x.s.r),
-    rankK:rankOfG(allPlayerStatsGlobal,x=>x.s.k/Math.max(x.s.pa,1),true),
-    rankBB:rankOfG(allPlayerStatsGlobal,x=>x.s.bb/Math.max(x.s.pa,1),false),
-  }:null;
+    kp:season.pa>0?season.k/season.pa*100:0,
+    bbp:season.pa>0?season.bb/season.pa*100:0,
+    rankAVG:season.pa>0?rankOfG(allPlayerStatsGlobal,x=>x.s.avgN):null,
+    rankOPS:season.pa>0?rankOfG(allPlayerStatsGlobal,x=>x.s.opsN):null,
+    rankOBP:season.pa>0?rankOfG(allPlayerStatsGlobal,x=>x.s.obpN):null,
+    rankSLG:season.pa>0?rankOfG(allPlayerStatsGlobal,x=>x.s.slgN):null,
+    rankRBI:season.pa>0?rankOfG(allPlayerStatsGlobal,x=>x.s.rbi):null,
+    rankR:season.pa>0?rankOfG(allPlayerStatsGlobal,x=>x.s.r):null,
+    rankK:season.pa>0?rankOfG(allPlayerStatsGlobal,x=>x.s.k/Math.max(x.s.pa,1),true):null,
+    rankBB:season.pa>0?rankOfG(allPlayerStatsGlobal,x=>x.s.bb/Math.max(x.s.pa,1),false):null,
+  };
   const sbStats=getSBStats(player);
   const sbByGame=getSBByGame(player);
   const mh=MEASUREMENT[player]||[];
@@ -1469,8 +1488,14 @@ function PlayerPage({player}){
     if(anyNew){setBurst(true);setTimeout(()=>setBurst(false),2800);}
   },[player]);
 
-  const games=[...new Set(rows.map(r=>r.opponent))];
-  const gameStats=games.map(g=>({g,s:calcStats(rows.filter(r=>r.opponent===g))}));
+  // date+opponentでユニーク試合をグループ化
+  const gameKeys=[...new Set(rows.map(r=>(r.date||"no-date")+"|"+r.opponent))];
+  const gameStats=gameKeys.map(key=>{
+    const [date,opp]=key.split("|");
+    const gameRows=rows.filter(r=>(r.date||"no-date")===date&&r.opponent===opp);
+    const label=date&&date!=="no-date"?`${date.replace("2025/","").replace("/","/")} ${opp}`:opp;
+    return {g:opp,date,label,s:calcStats(gameRows)};
+  });
 
   const subTabs=[
     {id:"batting",l:"打撃",icon:"⚾"},
@@ -1776,17 +1801,24 @@ function PlayerPage({player}){
 
         {/* ── 🔍 詳細分析（スプレッドシート実データ） ── */}
         {sub==="analysis"&&(()=>{
-          // チームフィルターに応じて集計シートを切り替え
-          const ss = teamFilter==="レギュラー"
-            ? (REG_SEASON_STATS[player] || SEASON_STATS[player])
-            : SEASON_STATS[player];
-          const lr = teamFilter==="レギュラー"
-            ? (REG_VS_LR_STATS[player] || VS_LR_STATS[player])
-            : VS_LR_STATS[player];
-          const risp = teamFilter==="レギュラー"
-            ? (REG_RISP_STATS[player] || RISP_STATS[player])
-            : RISP_STATS[player];
-          if(!ss) return(
+          // 全て動的計算（rows = チームフィルター済み）
+          // lr: チームフィルターに応じてVS_LR_STATSから取得（フォーマット統一）
+          const lrRaw = teamFilter==="ジュニア"?VS_LR_STATS[player]
+            :teamFilter==="レギュラー"?REG_VS_LR_STATS[player]||null
+            :(teamFilter||"").includes("SJ")||teamFilter==="スーパージュニア"||teamFilter==="スーパーJr"?SJ_VS_LR_STATS[player]||null
+            :VS_LR_STATS[player];
+          const lr = lrRaw?{
+            rPA:lrRaw.rPA||null, rAB:lrRaw.rAB||null, rH:lrRaw.rH||null,
+            rAVG:lrRaw.rAVG||0, rOPS:lrRaw.rOPS||0,
+            lPA:lrRaw.lPA||null, lAB:lrRaw.lAB||null, lH:lrRaw.lH||null,
+            lAVG:lrRaw.lAVG||0, lOPS:lrRaw.lOPS||0,
+          }:null;
+          // risp: チームフィルター対応
+          const rispMap2=teamFilter==="ジュニア"?RISP_JR:teamFilter==="レギュラー"?RISP_REG
+            :(teamFilter||"").includes("SJ")||teamFilter==="スーパージュニア"||teamFilter==="スーパーJr"?RISP_SJ:RISP_STATS;
+          const risp=rispMap2[player]||null;
+          // このカテゴリーでの出場データなし
+          if(season.pa===0) return(
             <div style={{textAlign:"center",padding:"40px 20px",color:C.sub}}>
               <div style={{fontSize:32,marginBottom:8}}>📊</div>
               <div style={{fontSize:14}}>詳細分析データがありません</div>
@@ -1828,8 +1860,8 @@ function PlayerPage({player}){
               <SL>K% / BB% 傾向</SL>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 {[
-                  {label:"三振率 (K%)",val:ss.kp,color:"#E05A5A",good:ss.kp<10,note:ss.kp<10?"✅ 低三振":"⚠️ 改善余地あり"},
-                  {label:"四球率 (BB%)",val:ss.bbp,color:C.green,good:ss.bbp>15,note:ss.bbp>15?"✅ 高選球眼":"選球眼向上を"},
+                  {label:"三振率 (K%)",val:season.pa>0?Math.round(season.k/season.pa*100):0,color:"#E05A5A",good:season.pa>0&&season.k/season.pa*100<10,note:season.pa>0&&season.k/season.pa*100<10?"✅ 低三振":"⚠️ 改善余地あり"},
+                  {label:"四球率 (BB%)",val:season.pa>0?Math.round(season.bb/season.pa*100):0,color:C.green,good:season.pa>0&&season.bb/season.pa*100>15,note:season.pa>0&&season.bb/season.pa*100>15?"✅ 高選球眼":"選球眼向上を"},
                 ].map(m=>(
                   <div key={m.label} style={{background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"10px 12px",border:`1px solid ${C.border}`}}>
                     <div style={{fontSize:9,color:C.sub,marginBottom:4}}>{m.label}</div>
@@ -1848,8 +1880,8 @@ function PlayerPage({player}){
               <SL>対右投手 vs 対左投手</SL>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
                 {[
-                  {label:"対右投手",pa:lr.rPA,ab:lr.rAB,h:lr.rH,avg:lr.rAVG,ops:lr.rOPS,color:C.blue},
-                  {label:"対左投手",pa:lr.lPA,ab:lr.lAB,h:lr.lH,avg:lr.lAVG,ops:lr.lOPS,color:C.purple},
+                  {label:"対右投手",pa:lr.rPA,ab:lr.rAB,h:lr.rH,avg:lr.rAVG,ops:lr.rOPS,color:C.blue,hasPAB:lr.rPA!=null},
+                  {label:"対左投手",pa:lr.lPA,ab:lr.lAB,h:lr.lH,avg:lr.lAVG,ops:lr.lOPS,color:C.purple,hasPAB:lr.lPA!=null},
                 ].map(m=>(
                   <div key={m.label} style={{background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"10px 12px",border:`1px solid ${C.border}`}}>
                     <div style={{fontSize:10,color:C.sub,marginBottom:6}}>{m.label}</div>
@@ -2205,14 +2237,15 @@ function PlayerPage({player}){
               該当する試合データがありません
             </div>
           )}
-          {gameStats.map(({g,s})=>{
+          {gameStats.map(({g,date,label,s},gi)=>{
             // gameType label
-            const gtLabel = rows.find(r=>r.opponent===g)?.gameType;
+            const gtLabel = rows.find(r=>r.opponent===g&&(r.date||"no-date")===(date||"no-date"))?.gameType;
+            const gameKey=`${date||"no-date"}|${g}|${gi}`;
             return(
-            <Card key={g}>
+            <Card key={gameKey}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
                 <div>
-                  <div style={{fontSize:13,fontWeight:700,color:C.text}}>vs {g}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:C.text}}>vs {g}{date&&<span style={{fontSize:10,color:C.sub,marginLeft:5}}>{date.replace("2025/","")}</span>}</div>
                   <div style={{display:"flex",gap:4,alignItems:"center",marginTop:2}}>
                     {gtLabel&&<span style={{fontSize:9,color:gtLabel==="公式"?C.accent:C.sub,
                       background:gtLabel==="公式"?"rgba(196,118,58,0.15)":"rgba(255,255,255,0.05)",
