@@ -2333,7 +2333,8 @@ function TeamPage(){
 
   const [rankTab,setRankTab]=useState("batting");
   const [rankTeam,setRankTeam]=useState("合計");
-  const rankBaseRecords=rankTeam==="合計"?ALL_RECORDS:rankTeam==="ジュニア"?GAME_RECORDS:rankTeam==="レギュラー"?REG_GAME_RECORDS:SJ_GAME_RECORDS;
+  const rankBaseAll=rankTeam==="合計"?ALL_RECORDS:rankTeam==="ジュニア"?GAME_RECORDS:rankTeam==="レギュラー"?REG_GAME_RECORDS:SJ_GAME_RECORDS;
+  const rankBaseRecords=typeFilter==="合計"?rankBaseAll:rankBaseAll.filter(r=>r.gameType===typeFilter);
   const rankPlayers=[...new Set(rankBaseRecords.map(r=>r.player))];
   const teamColor2=(t)=>t==="レギュラー"?C.blue:t==="ジュニア"?C.accent:C.purple;
   const medal=(i)=>i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`;
@@ -2474,12 +2475,23 @@ function TeamPage(){
       {/* ランキングページ */}
       {mainTab==="ranking"&&<div style={{padding:"12px 14px 80px"}}>
         {/* チームフィルター */}
-        <div style={{display:"flex",gap:5,marginBottom:12,flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:5,marginBottom:8,flexWrap:"wrap"}}>
           {[{v:"合計",c:"#fff"},{v:"レギュラー",c:C.blue},{v:"ジュニア",c:C.accent},{v:"スーパーJr",c:C.purple}].map(({v,c})=>(
             <button key={v} onClick={()=>setRankTeam(v==="スーパーJr"?"スーパーJr":v)}
               style={{background:rankTeam===v?`${c}22`:"rgba(255,255,255,0.05)",
                 color:rankTeam===v?c:C.sub,border:`1px solid ${rankTeam===v?c:C.border}`,
                 borderRadius:20,padding:"5px 12px",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+              {v}
+            </button>
+          ))}
+        </div>
+        {/* OP戦/公式戦フィルター */}
+        <div style={{display:"flex",gap:5,marginBottom:12}}>
+          {["合計","OP戦","公式戦"].map(v=>(
+            <button key={v} onClick={()=>setTypeFilter(v)}
+              style={{background:typeFilter===v?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)",
+                color:typeFilter===v?"#fff":C.sub,border:`1px solid ${typeFilter===v?"rgba(255,255,255,0.4)":C.border}`,
+                borderRadius:16,padding:"4px 12px",fontSize:11,fontWeight:typeFilter===v?700:500,cursor:"pointer"}}>
               {v}
             </button>
           ))}
