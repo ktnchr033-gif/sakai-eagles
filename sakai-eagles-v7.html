@@ -2230,9 +2230,15 @@ function TeamPage(){
   const medal=(i)=>i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`;
   const getTC=(p)=>REG_PLAYERS_MANUAL.includes(p)?"レギュラー":JR_PLAYERS_MANUAL.includes(p)?"ジュニア":"SJr";
 
+  // チームフィルターに対応した盗塁ログ
+  const rankSBLog=rankTeam==="合計"?ALL_SB_LOG
+    :rankTeam==="ジュニア"?SB_LOG
+    :rankTeam==="レギュラー"?REG_SB_LOG
+    :SJ_SB_LOG;
+
   const battingRanks=rankPlayers.map(p=>{
     const s=calcStats(rankBaseRecords.filter(r=>r.player===p));
-    const sb=ALL_SB_LOG.filter(r=>r.player===p).reduce((a,r)=>a+r.sb,0);
+    const sb=rankSBLog.filter(r=>r.player===p).reduce((a,r)=>a+r.sb,0);
     return {p,s,sb,tc:getTC(p)};
   }).filter(x=>x.s.ab>=3);
 
@@ -2241,7 +2247,7 @@ function TeamPage(){
     const sw=mh.find(e=>e.type==="swing");
     const pt=mh.find(e=>e.type==="pitch");
     const br=mh.find(e=>e.type==="baserun");
-    return {p,tc:getTC(p),swingMax:sw?sw.max:null,swingAvg:sw?sw.avg:null,mound:pt?pt.mound:null,pd:pt?pt.pd:null,dash:br?br.dash:null,d2:br?br.d2:null};
+    return {p,tc:getTC(p),swingMax:sw?sw.max:null,swingAvg:sw?sw.avg:null,mound:pt?pt.mound:null,pd:pt?pt.pd:null,dash:br?br.dash:null,d2:br?br.d2:null,d3:br?br.d3:null,hr:br?br.hr:null};
   }).filter(x=>x.swingMax||x.mound||x.dash);
 
   const playerRanks=[...new Set(filteredRecords.map(r=>r.player))].map(p=>{
@@ -2377,7 +2383,10 @@ function TeamPage(){
             {id:"sb",l:"盗塁"},
             {id:"swing",l:"スイング"},
             {id:"pitch",l:"球速"},
-            {id:"dash",l:"ベースラン"},
+            {id:"dash",l:"駆け抜け"},
+            {id:"d2",l:"2塁打"},
+            {id:"d3",l:"3塁打"},
+            {id:"hr",l:"HR"},
           ].map(t=>(
             <button key={t.id} onClick={()=>setRankTab(t.id)}
               style={{background:rankTab===t.id?C.gold+"22":"rgba(255,255,255,0.05)",
@@ -2462,20 +2471,28 @@ function TeamPage(){
           ))}
         </>}
 
-        {/* ベースランランキング */}
-        {rankTab==="dash"&&<>
-          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>駆け抜けタイムランキング（秒・少ない順）</div>
-          {[...measureRanks].filter(x=>x.dash).sort((a,b)=>a.dash-b.dash).map(({p,dash,d2,tc},i)=>(
-            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
-              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
-              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
-              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
-              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
-              <div style={{fontSize:11,color:C.sub}}>2塁:{d2}秒</div>
-              <div style={{fontSize:20,fontWeight:900,color:C.green,minWidth:52,textAlign:"right"}}>{dash}<span style={{fontSize:10,color:C.sub}}> 秒</span></div>
-            </div>
-          ))}
-        </>}
+        {/* ベースランランキング 4種目 */}
+        {["dash","d2","d3","hr"].includes(rankTab)&&(()=>{
+          const cfg={
+            dash:{label:"駆け抜けランキング（秒・少ない順）",key:"dash",sub:(r)=>`2塁:${r.d2}秒`},
+            d2:  {label:"2塁打ランキング（秒・少ない順）",  key:"d2",  sub:(r)=>`駆:${r.dash}秒`},
+            d3:  {label:"3塁打ランキング（秒・少ない順）",  key:"d3",  sub:(r)=>`2塁:${r.d2}秒`},
+            hr:  {label:"ホームランランキング（秒・少ない順）",key:"hr",sub:(r)=>`3塁:${r.d3}秒`},
+          }[rankTab];
+          return(<>
+            <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>{cfg.label}</div>
+            {[...measureRanks].filter(x=>x[cfg.key]).sort((a,b)=>a[cfg.key]-b[cfg.key]).map((r,i)=>(
+              <div key={r.p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+                background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+                <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+                <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(r.tc),flexShrink:0}}/>
+                <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{r.p}</div>
+                <div style={{fontSize:11,color:C.sub}}>{cfg.sub(r)}</div>
+                <div style={{fontSize:20,fontWeight:900,color:C.green,minWidth:52,textAlign:"right"}}>{r[cfg.key]}<span style={{fontSize:10,color:C.sub}}> 秒</span></div>
+              </div>
+            ))}
+          </>);
+        })()}
       </div>}
 
       <div style={{padding:"13px 14px 0",display:mainTab==="ranking"?"none":"block"}}>
