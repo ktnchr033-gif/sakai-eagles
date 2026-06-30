@@ -2674,12 +2674,12 @@ function TeamPage(){
       </div>
       {/* メインタブ：チーム統計 / ランキング */}
       <div style={{display:"flex",borderBottom:`1px solid ${C.border}`}}>
-        {[{id:"stats",l:"チーム統計",icon:"📊"},{id:"ranking",l:"ランキング",icon:"🏆"}].map(t=>(
+        {[{id:"stats",l:"チーム統計",icon:"📊"},{id:"ranking",l:"ランキング",icon:"🏆"},{id:"pitching",l:"投手",icon:"🔥"}].map(t=>(
           <button key={t.id} onClick={()=>setMainTab(t.id)}
             style={{flex:1,background:"none",border:"none",padding:"10px 4px",cursor:"pointer",
               fontSize:12,fontWeight:800,
-              color:mainTab===t.id?(t.id==="stats"?C.accent:C.gold):C.sub,
-              borderBottom:mainTab===t.id?(t.id==="stats"?`2px solid ${C.accent}`:`2px solid ${C.gold}`):"2px solid transparent"}}>
+              color:mainTab===t.id?(t.id==="stats"?C.accent:t.id==="ranking"?C.gold:C.purple):C.sub,
+              borderBottom:mainTab===t.id?(t.id==="stats"?`2px solid ${C.accent}`:t.id==="ranking"?`2px solid ${C.gold}`:`2px solid ${C.purple}`):"2px solid transparent"}}>
             {t.icon} {t.l}
           </button>
         ))}
@@ -2925,7 +2925,9 @@ function TeamPage(){
         })()}
       </div>}
 
-      <div style={{padding:"13px 14px 0",display:mainTab==="ranking"?"none":"block"}}>
+      {mainTab==="pitching"&&<PitchPage/>}
+
+      <div style={{padding:"13px 14px 0",display:mainTab==="stats"?"block":"none"}}>
 
         {/* チーム打撃 */}
         <SL>チーム通算打撃成績</SL>
@@ -4216,7 +4218,7 @@ function InputPage(){
 export default function App(){
   const [tab,setTab]=useState("player");
   const [player,setPlayer]=useState(ALL_PLAYERS[0]);
-  const tabs=[{id:"player",icon:"👤",l:"個人"},{id:"team",icon:"⚾",l:"チーム"},{id:"pitch",icon:"🔥",l:"投手"},{id:"week",icon:"📅",l:"平日"},{id:"input",icon:"✏️",l:"入力"}];
+  const tabs=[{id:"player",icon:"👤",l:"個人"},{id:"team",icon:"⚾",l:"チーム"},{id:"week",icon:"📅",l:"平日"},{id:"input",icon:"✏️",l:"入力"}];
 
   return(
     <div style={{background:C.bg,minHeight:"100vh",
@@ -4257,14 +4259,13 @@ export default function App(){
       <div style={{overflowY:"auto",height:`calc(100vh - ${tab==="player"?106:60}px)`}}>
         {tab==="player"&&<PlayerPage player={player}/>}
         {tab==="team"&&<TeamPage/>}
-        {tab==="pitch"&&<PitchPage/>}
         {tab==="week"&&<WeekPage/>}
         {tab==="input"&&<InputPage/>}
       </div>
 
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",
         width:"100%",background:"rgba(11,21,32,0.97)",backdropFilter:"blur(16px)",
-        borderTop:`1px solid ${C.border}`,display:"grid",gridTemplateColumns:"repeat(5,1fr)",height:60,zIndex:40}}>
+        borderTop:`1px solid ${C.border}`,display:"grid",gridTemplateColumns:"repeat(4,1fr)",height:60,zIndex:40}}>
         {tabs.map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)} style={{
             display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
