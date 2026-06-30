@@ -2487,12 +2487,12 @@ function TeamPage(){
         </div>
         {/* OP戦/公式戦フィルター */}
         <div style={{display:"flex",gap:5,marginBottom:12}}>
-          {["合計","OP戦","公式戦"].map(v=>(
+          {[{l:"合計",v:"合計"},{l:"OP戦",v:"OP"},{l:"公式戦",v:"公式"}].map(({l,v})=>(
             <button key={v} onClick={()=>setTypeFilter(v)}
               style={{background:typeFilter===v?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)",
                 color:typeFilter===v?"#fff":C.sub,border:`1px solid ${typeFilter===v?"rgba(255,255,255,0.4)":C.border}`,
                 borderRadius:16,padding:"4px 12px",fontSize:11,fontWeight:typeFilter===v?700:500,cursor:"pointer"}}>
-              {v}
+              {l}
             </button>
           ))}
         </div>
