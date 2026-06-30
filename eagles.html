@@ -1507,6 +1507,19 @@ function calcStats(rows) {
     games:new Set(rows.map(r=>(r.date||"no-date")+"|"+r.opponent+"|"+(r.team||""))).size};
 }
 
+// 投手陣の合計成績を計算（PITCH_STATS系の配列を受け取り合算）
+function calcPitchTotals(rows){
+  const t={outs:0,ha:0,r:0,er:0,bb:0,hbp:0,k:0,hr:0};
+  rows.forEach(row=>{ Object.keys(t).forEach(k=>{ t[k]+=row[k]||0; }); });
+  const ip=t.outs/3;
+  const ipDisplay=`${Math.floor(t.outs/3)}.${t.outs%3}`;
+  const era=ip>0?t.er*9/ip:0;
+  const whip=ip>0?(t.bb+t.ha)/ip:0;
+  const k9=ip>0?t.k*9/ip:0;
+  const bb9=ip>0?t.bb*9/ip:0;
+  return {...t,ip,ipDisplay,era:era.toFixed(2),whip:whip.toFixed(3),k9:k9.toFixed(2),bb9:bb9.toFixed(2)};
+}
+
 // ─── デザイン ────────────────────────────────────────────────
 const C={bg:"#0B1520",card:"rgba(255,255,255,0.035)",border:"rgba(255,255,255,0.07)",
   accent:"#C4763A",accentB:"#E8943A",blue:"#5B8DEF",green:"#4CAF72",
@@ -2535,6 +2548,18 @@ function TeamPage(){
   const totalSB = filteredSBLog.reduce((s,r)=>s+r.sb, 0);
   const totalCS = filteredSBLog.reduce((s,r)=>s+r.cs, 0);
 
+  // 投手成績集計（フィルターに応じた投手別データを合算）
+  const getTeamPitchRows=()=>{
+    const jrList  = PITCH_STATS; // ジュニアはOP/公式の区分データなし
+    const regList = typeFilter==="OP"?PITCH_STATS_REG_OP:typeFilter==="公式"?PITCH_STATS_REG_OFFICIAL:PITCH_STATS_REG;
+    const sjList  = typeFilter==="OP"?PITCH_STATS_SJ_OP:typeFilter==="公式"?PITCH_STATS_SJ_OFFICIAL:PITCH_STATS_SJ;
+    if(teamFilter==="ジュニア") return jrList;
+    if(teamFilter==="レギュラー") return regList;
+    if(teamFilter==="スーパーJr") return sjList;
+    return [...jrList,...regList,...sjList];
+  };
+  const teamPitchTotal=calcPitchTotals(getTeamPitchRows());
+
   const [rankTab,setRankTab]=useState("batting");
   const [rankTeam,setRankTeam]=useState("合計");
   const rankBaseAll=rankTeam==="合計"?ALL_RECORDS:rankTeam==="ジュニア"?GAME_RECORDS:rankTeam==="レギュラー"?REG_GAME_RECORDS:SJ_GAME_RECORDS;
@@ -2975,6 +3000,42 @@ function TeamPage(){
               <div key={l} style={{textAlign:"center",background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"7px 4px",border:`1px solid ${C.border}`}}>
                 <div style={{fontSize:9,color:C.sub,marginBottom:2}}>{l}</div>
                 <div style={{fontSize:16,fontWeight:900,color:c,lineHeight:1}}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </Card>}
+
+        {/* チーム投手 */}
+        <SL color={C.purple}>チーム通算投手成績</SL>
+        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+          <span style={{fontSize:11,color:C.sub}}>投球回 {teamPitchTotal.ipDisplay}</span>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:9}}>
+          <StatBox label="チーム防御率" value={teamPitchTotal.era}  color={C.purple}/>
+          <StatBox label="WHIP"        value={teamPitchTotal.whip} color={C.blue}/>
+          <StatBox label="被安打"       value={teamPitchTotal.ha}   sub="本"/>
+          <StatBox label="総失点"       value={teamPitchTotal.r}    sub="点"/>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:12}}>
+          <StatBox label="奪三振" value={teamPitchTotal.k}  color={C.green}/>
+          <StatBox label="与四球" value={teamPitchTotal.bb} color="#E05A5A"/>
+          <StatBox label="被本塁打" value={teamPitchTotal.hr} color={C.gold}/>
+          <StatBox label="自責点" value={teamPitchTotal.er} sub="点"/>
+        </div>
+
+        {/* 投手1試合平均 */}
+        {totalGames>0&&<Card style={{background:"rgba(155,89,182,0.06)",border:`1px solid rgba(155,89,182,0.2)`,marginBottom:12}}>
+          <SL color={C.purple}>🔥 投手1試合平均</SL>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
+            {[
+              {l:"被安打",v:(teamPitchTotal.ha/totalGames).toFixed(1),c:C.blue},
+              {l:"失点",  v:(teamPitchTotal.r/totalGames).toFixed(1), c:"#E05A5A"},
+              {l:"奪三振",v:(teamPitchTotal.k/totalGames).toFixed(1), c:C.green},
+              {l:"与四球",v:(teamPitchTotal.bb/totalGames).toFixed(1),c:C.accent},
+            ].map(({l,v,c})=>(
+              <div key={l} style={{textAlign:"center",background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"8px 4px",border:`1px solid ${C.border}`}}>
+                <div style={{fontSize:9,color:C.sub,marginBottom:2}}>{l}</div>
+                <div style={{fontSize:18,fontWeight:900,color:c,lineHeight:1}}>{v}</div>
               </div>
             ))}
           </div>
