@@ -2346,10 +2346,15 @@ function TeamPage(){
     :rankTeam==="レギュラー"?REG_SB_LOG
     :SJ_SB_LOG;
 
+  const rankRispMap=rankTeam==="ジュニア"?RISP_JR:rankTeam==="レギュラー"?RISP_REG
+    :rankTeam==="スーパーJr"?RISP_SJ:RISP_STATS;
   const battingRanks=rankPlayers.map(p=>{
     const s=calcStats(rankBaseRecords.filter(r=>r.player===p));
     const sb=rankSBLog.filter(r=>r.player===p).reduce((a,r)=>a+r.sb,0);
-    return {p,s,sb,tc:getTC(p)};
+    const risp=rankRispMap[p]||null;
+    const xbh=s.d2+s.d3+s.hr;
+    const kp=s.pa>0?s.k/s.pa*100:999;
+    return {p,s,sb,tc:getTC(p),risp,xbh,kp};
   }).filter(x=>x.s.ab>=3);
 
   const measureRanks=rankPlayers.map(p=>{
@@ -2502,6 +2507,11 @@ function TeamPage(){
             {id:"batting",l:"打撃"},
             {id:"ops",l:"OPS"},
             {id:"rbi",l:"打点"},
+            {id:"r",l:"得点"},
+            {id:"slg",l:"長打率"},
+            {id:"risp",l:"得点圏打率"},
+            {id:"lowk",l:"低三振"},
+            {id:"xbh",l:"長打数"},
             {id:"sb",l:"盗塁"},
             {id:"swing",l:"スイング"},
             {id:"pitch",l:"球速"},
@@ -2545,6 +2555,81 @@ function TeamPage(){
               <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
               <div style={{fontSize:11,color:C.sub}}>{s.ab}打数</div>
               <div style={{fontSize:20,fontWeight:900,color:C.gold,minWidth:48,textAlign:"right"}}>{s.ops}</div>
+            </div>
+          ))}
+        </>}
+
+        {/* 得点ランキング */}
+        {rankTab==="r"&&<>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>得点ランキング</div>
+          {[...battingRanks].sort((a,b)=>b.s.r-a.s.r).map(({p,s,tc},i)=>(
+            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
+              <div style={{fontSize:11,color:C.sub}}>{s.pa}打席</div>
+              <div style={{fontSize:20,fontWeight:900,color:C.blue,minWidth:48,textAlign:"right"}}>{s.r}<span style={{fontSize:10,color:C.sub}}> 得点</span></div>
+            </div>
+          ))}
+        </>}
+
+        {/* 長打率ランキング */}
+        {rankTab==="slg"&&<>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>長打率ランキング</div>
+          {[...battingRanks].sort((a,b)=>b.s.slgN-a.s.slgN).map(({p,s,tc},i)=>(
+            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
+              <div style={{fontSize:11,color:C.sub}}>{s.ab}打数</div>
+              <div style={{fontSize:20,fontWeight:900,color:C.purple,minWidth:48,textAlign:"right"}}>{s.slg}</div>
+            </div>
+          ))}
+        </>}
+
+        {/* 得点圏打率ランキング */}
+        {rankTab==="risp"&&<>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>得点圏打率ランキング（得点圏3打席以上）</div>
+          {[...battingRanks].filter(x=>x.risp&&x.risp.pa>=3).sort((a,b)=>b.risp.avg-a.risp.avg).map(({p,risp,tc},i)=>(
+            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
+              <div style={{fontSize:11,color:C.sub}}>{risp.pa}打席</div>
+              <div style={{fontSize:20,fontWeight:900,color:C.green,minWidth:48,textAlign:"right"}}>{risp.avg.toFixed(3).replace(/^0/,"")}</div>
+            </div>
+          ))}
+        </>}
+
+        {/* 低三振率ランキング */}
+        {rankTab==="lowk"&&<>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>低三振率ランキング（コンタクト力）</div>
+          {[...battingRanks].sort((a,b)=>a.kp-b.kp).map(({p,s,kp,tc},i)=>(
+            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
+              <div style={{fontSize:11,color:C.sub}}>K{s.k}/{s.pa}打席</div>
+              <div style={{fontSize:20,fontWeight:900,color:"#4CAF72",minWidth:48,textAlign:"right"}}>{kp.toFixed(1)}<span style={{fontSize:10,color:C.sub}}>%</span></div>
+            </div>
+          ))}
+        </>}
+
+        {/* 長打数ランキング */}
+        {rankTab==="xbh"&&<>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>長打数ランキング（2B+3B+HR）</div>
+          {[...battingRanks].sort((a,b)=>b.xbh-a.xbh).map(({p,s,xbh,tc},i)=>(
+            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
+              <div style={{fontSize:11,color:C.sub}}>2B{s.d2} 3B{s.d3} HR{s.hr}</div>
+              <div style={{fontSize:20,fontWeight:900,color:"#E8943A",minWidth:48,textAlign:"right"}}>{xbh}<span style={{fontSize:10,color:C.sub}}> 長打</span></div>
             </div>
           ))}
         </>}
