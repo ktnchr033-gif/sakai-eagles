@@ -1279,13 +1279,19 @@ const TEAM_VS = {rPA:347,rAB:286,rH:99,rTB:135,rAVG:0.346,rOBP:0.445,rSLG:0.472,
 
 // 投手別全体成績
 const PITCH_STATS = [
-  {name:"青木",  g:12,gs:6, gf:6,  outs:88, ip:"29.1",ha:32,r:29,er:25,bb:22,hbp:2,k:9,  hr:1,era:7.67, whip:1.909,k9:2.76,  bb9:6.75},
-  {name:"橋本",  g:13,gs:1, gf:12, outs:66, ip:"22.0",ha:27,r:20,er:15,bb:8, hbp:1,k:8,  hr:1,era:6.14, whip:1.636,k9:3.27,  bb9:3.27},
-  {name:"池田",  g:6, gs:2, gf:4,  outs:27, ip:"9.0", ha:13,r:18,er:15,bb:16,hbp:2,k:3,  hr:0,era:15.00,whip:3.444,k9:3.00,  bb9:16.00},
-  {name:"藤",    g:11,gs:5, gf:6,  outs:76, ip:"25.1",ha:33,r:27,er:27,bb:24,hbp:3,k:5,  hr:3,era:9.59, whip:2.368,k9:1.78,  bb9:8.53},
-  {name:"宮下",  g:2, gs:0, gf:2,  outs:7,  ip:"2.1", ha:1, r:1, er:1, bb:1, hbp:1,k:3,  hr:0,era:3.86, whip:1.286,k9:11.57, bb9:3.86},
-  {name:"田之頭",g:2, gs:0, gf:2,  outs:9,  ip:"3.0", ha:6, r:3, er:3, bb:0, hbp:0,k:1,  hr:0,era:9.00, whip:2.000,k9:3.00,  bb9:0.00},
-  {name:"三木",  g:1, gs:0, gf:1,  outs:2,  ip:"0.2", ha:1, r:0, er:0, bb:0, hbp:0,k:0,  hr:0,era:0.00, whip:1.500,k9:0.00,  bb9:0.00},
+  {name:"宮下",  g:11,gs:11,gf:0, outs:122,ip:"40.2",ha:38,r:25,er:22,bb:26,hbp:3,k:28,hr:0,era:4.87, whip:1.574,k9:6.2,  bb9:5.75},
+  {name:"花井",  g:4, gs:0, gf:4, outs:6,  ip:"2.0", ha:7, r:9, er:9, bb:6, hbp:1,k:0, hr:1,era:40.5, whip:6.5,  k9:0.0,  bb9:27.0},
+  {name:"藤　妹",g:9, gs:4, gf:5, outs:61, ip:"20.1",ha:29,r:22,er:14,bb:11,hbp:0,k:3, hr:0,era:6.2,  whip:1.967,k9:1.33, bb9:4.87},
+  {name:"田之頭",g:3, gs:2, gf:1, outs:23, ip:"7.2", ha:8, r:4, er:4, bb:5, hbp:0,k:5, hr:0,era:4.7,  whip:1.696,k9:5.87, bb9:5.87},
+  {name:"三木",  g:3, gs:0, gf:3, outs:12, ip:"4.0", ha:5, r:0, er:0, bb:1, hbp:0,k:2, hr:0,era:0.0,  whip:1.5,  k9:4.5,  bb9:2.25},
+  {name:"山中",  g:6, gs:1, gf:5, outs:35, ip:"11.2",ha:6, r:4, er:4, bb:11,hbp:1,k:6, hr:0,era:3.09, whip:1.457,k9:4.63, bb9:8.49},
+  {name:"尾西",  g:3, gs:0, gf:3, outs:8,  ip:"2.2", ha:8, r:16,er:15,bb:6, hbp:0,k:1, hr:0,era:50.62,whip:5.25, k9:3.38, bb9:20.25},
+  {name:"山沖",  g:1, gs:0, gf:1, outs:3,  ip:"1.0", ha:1, r:3, er:3, bb:4, hbp:0,k:1, hr:0,era:27.0, whip:5.0,  k9:9.0,  bb9:36.0},
+  {name:"清水",  g:5, gs:0, gf:5, outs:29, ip:"9.2", ha:8, r:3, er:2, bb:6, hbp:1,k:8, hr:0,era:1.86, whip:1.448,k9:7.45, bb9:5.59},
+  {name:"武原",  g:3, gs:0, gf:3, outs:16, ip:"5.1", ha:4, r:2, er:0, bb:4, hbp:0,k:1, hr:0,era:0.0,  whip:1.5,  k9:1.69, bb9:6.75},
+  {name:"櫻谷し",g:1, gs:0, gf:1, outs:3,  ip:"1.0", ha:5, r:5, er:5, bb:2, hbp:0,k:1, hr:0,era:45.0, whip:7.0,  k9:9.0,  bb9:18.0},
+  {name:"今村",  g:2, gs:0, gf:2, outs:4,  ip:"1.1", ha:2, r:4, er:4, bb:6, hbp:0,k:0, hr:0,era:27.0, whip:6.0,  k9:0.0,  bb9:40.5},
+  {name:"石原",  g:1, gs:0, gf:1, outs:3,  ip:"1.0", ha:0, r:1, er:1, bb:2, hbp:0,k:1, hr:0,era:9.0,  whip:2.0,  k9:9.0,  bb9:18.0},
 ];
 // ─── レギュラー投手成績（合計・OP戦・公式戦） ───────────────────
 const PITCH_STATS_REG = [
@@ -1354,21 +1360,26 @@ const PITCH_STATS_SJ_OFFICIAL = [
 
 // 先発成績
 const PITCH_START = [
-  {name:"青木", g:6,outs:68,ip:"22.2",ha:16,r:15,er:13,bb:17,hbp:1,k:7,hr:1,era:5.16, whip:1.500},
-  {name:"橋本", g:1,outs:15,ip:"5.0", ha:1, r:0, er:0, bb:3, hbp:0,k:3,hr:0,era:0.00, whip:0.800},
-  {name:"池田", g:2,outs:14,ip:"4.2", ha:8, r:5, er:4, bb:6, hbp:1,k:1,hr:0,era:7.71, whip:3.214},
-  {name:"藤",   g:5,outs:52,ip:"17.1",ha:17,r:17,er:17,bb:16,hbp:3,k:3,hr:3,era:8.83, whip:2.077},
+  {name:"宮下",  g:11,outs:122,ip:"40.2",ha:38,r:25,er:22,bb:26,hbp:3,k:28,hr:0,era:4.87,whip:1.574},
+  {name:"藤　妹",g:4, outs:36, ip:"12.0",ha:18,r:13,er:5, bb:3, hbp:0,k:1, hr:0,era:3.75,whip:1.75},
+  {name:"田之頭",g:2, outs:20, ip:"6.2", ha:7, r:4, er:4, bb:5, hbp:0,k:5, hr:0,era:5.4, whip:1.8},
+  {name:"山中",  g:1, outs:12, ip:"4.0", ha:1, r:1, er:1, bb:4, hbp:0,k:3, hr:0,era:2.25,whip:1.25},
 ];
 
 // 救援成績
 const PITCH_RELIEF = [
-  {name:"青木",  g:6, outs:20,ip:"6.2", ha:16,r:14,er:12,bb:5, hbp:1,k:2,hr:0,era:16.20,whip:3.300},
-  {name:"橋本",  g:12,outs:51,ip:"17.0",ha:26,r:20,er:15,bb:5, hbp:1,k:5,hr:1,era:7.94, whip:1.882},
-  {name:"池田",  g:4, outs:13,ip:"4.1", ha:5, r:13,er:11,bb:10,hbp:1,k:2,hr:0,era:22.85,whip:3.692},
-  {name:"藤",    g:6, outs:24,ip:"8.0", ha:16,r:10,er:10,bb:8, hbp:0,k:2,hr:0,era:11.25,whip:3.000},
-  {name:"宮下",  g:2, outs:7, ip:"2.1", ha:1, r:1, er:1, bb:1, hbp:1,k:3,hr:0,era:3.86, whip:1.286},
-  {name:"田之頭",g:2, outs:9, ip:"3.0", ha:6, r:3, er:3, bb:0, hbp:0,k:1,hr:0,era:9.00, whip:2.000},
-  {name:"三木",  g:1, outs:2, ip:"0.2", ha:1, r:0, er:0, bb:0, hbp:0,k:0,hr:0,era:0.00, whip:1.500},
+  {name:"花井",  g:4,outs:6, ip:"2.0", ha:7,r:9, er:9, bb:6,hbp:1,k:0,hr:1,era:40.5, whip:6.5},
+  {name:"藤　妹",g:5,outs:25,ip:"8.1", ha:11,r:9, er:9, bb:8,hbp:0,k:2,hr:0,era:9.72, whip:2.28},
+  {name:"田之頭",g:1,outs:3, ip:"1.0", ha:1, r:0, er:0, bb:0,hbp:0,k:0,hr:0,era:0.0,  whip:1.0},
+  {name:"三木",  g:3,outs:12,ip:"4.0", ha:5, r:0, er:0, bb:1,hbp:0,k:2,hr:0,era:0.0,  whip:1.5},
+  {name:"山中",  g:5,outs:23,ip:"7.2", ha:5, r:3, er:3, bb:7,hbp:1,k:3,hr:0,era:3.52, whip:1.565},
+  {name:"尾西",  g:3,outs:8, ip:"2.2", ha:8, r:16,er:15,bb:6,hbp:0,k:1,hr:0,era:50.62,whip:5.25},
+  {name:"山沖",  g:1,outs:3, ip:"1.0", ha:1, r:3, er:3, bb:4,hbp:0,k:1,hr:0,era:27.0, whip:5.0},
+  {name:"清水",  g:5,outs:29,ip:"9.2", ha:8, r:3, er:2, bb:6,hbp:1,k:8,hr:0,era:1.86, whip:1.448},
+  {name:"武原",  g:3,outs:16,ip:"5.1", ha:4, r:2, er:0, bb:4,hbp:0,k:1,hr:0,era:0.0,  whip:1.5},
+  {name:"櫻谷し",g:1,outs:3, ip:"1.0", ha:5, r:5, er:5, bb:2,hbp:0,k:1,hr:0,era:45.0, whip:7.0},
+  {name:"今村",  g:2,outs:4, ip:"1.1", ha:2, r:4, er:4, bb:6,hbp:0,k:0,hr:0,era:27.0, whip:6.0},
+  {name:"石原",  g:1,outs:3, ip:"1.0", ha:0, r:1, er:1, bb:2,hbp:0,k:1,hr:0,era:9.0,  whip:2.0},
 ];
 // ─── レギュラー先発/救援別 ───
 const PITCH_START_REG = [
@@ -1410,55 +1421,62 @@ const PITCH_RELIEF_SJ = [
 
 // 投手ログ（試合別）
 const PITCH_LOG = [
-  {date:"2/15",opponent:"明日香ヤング",   name:"青木",  role:"先発",outs:6, ip:"2.0",ha:2,r:1,er:1,bb:2,hbp:0,k:2,hr:0},
-  {date:"2/15",opponent:"明日香ヤング",   name:"藤",    role:"救援",outs:3, ip:"1.0",ha:2,r:0,er:0,bb:1,hbp:0,k:0,hr:0},
-  {date:"2/15",opponent:"明日香ヤング",   name:"池田",  role:"救援",outs:5, ip:"1.2",ha:4,r:5,er:3,bb:2,hbp:0,k:0,hr:0},
-  {date:"2/15",opponent:"明日香ヤング",   name:"青木",  role:"救援",outs:1, ip:"0.1",ha:3,r:3,er:2,bb:0,hbp:0,k:1,hr:0},
-  {date:"2/15",opponent:"明日香ヤング",   name:"橋本",  role:"救援",outs:3, ip:"1.0",ha:1,r:2,er:1,bb:1,hbp:0,k:1,hr:1},
-  {date:"2/21",opponent:"京都ヤング",     name:"藤",    role:"先発",outs:9, ip:"3.0",ha:3,r:4,er:4,bb:2,hbp:0,k:1,hr:1},
-  {date:"2/21",opponent:"京都ヤング",     name:"橋本",  role:"救援",outs:3, ip:"1.0",ha:0,r:0,er:0,bb:0,hbp:0,k:1,hr:0},
-  {date:"2/21",opponent:"京都ヤング",     name:"青木",  role:"救援",outs:8, ip:"2.2",ha:7,r:5,er:5,bb:0,hbp:0,k:2,hr:0},
-  {date:"2/21",opponent:"京都ヤング",     name:"池田",  role:"先発",outs:5, ip:"1.2",ha:4,r:2,er:2,bb:4,hbp:0,k:0,hr:0},
-  {date:"2/21",opponent:"京都ヤング",     name:"橋本",  role:"救援",outs:10,ip:"3.1",ha:5,r:1,er:1,bb:1,hbp:0,k:1,hr:0},
-  {date:"2/21",opponent:"京都ヤング",     name:"青木",  role:"救援",outs:3, ip:"1.0",ha:1,r:1,er:1,bb:0,hbp:0,k:1,hr:0},
-  {date:"2/21",opponent:"京都ヤング",     name:"藤",    role:"救援",outs:3, ip:"1.0",ha:1,r:0,er:0,bb:2,hbp:0,k:1,hr:0},
-  {date:"2/23",opponent:"和歌山ホークス", name:"青木",  role:"先発",outs:12,ip:"4.0",ha:3,r:5,er:4,bb:2,hbp:0,k:1,hr:0},
-  {date:"2/23",opponent:"和歌山ホークス", name:"橋本",  role:"救援",outs:6, ip:"2.0",ha:0,r:2,er:0,bb:2,hbp:0,k:1,hr:0},
-  {date:"2/23",opponent:"和歌山ホークス", name:"池田",  role:"先発",outs:9, ip:"3.0",ha:4,r:3,er:2,bb:2,hbp:1,k:1,hr:1},
-  {date:"2/23",opponent:"和歌山ホークス", name:"藤",    role:"救援",outs:6, ip:"2.0",ha:4,r:6,er:3,bb:3,hbp:0,k:1,hr:0},
-  {date:"2/23",opponent:"和歌山ホークス", name:"藤",    role:"救援",outs:3, ip:"1.0",ha:2,r:0,er:0,bb:0,hbp:0,k:1,hr:0},
-  {date:"2/28",opponent:"神戸須磨クラブ", name:"青木",  role:"先発",outs:15,ip:"5.0",ha:3,r:1,er:1,bb:2,hbp:0,k:2,hr:1},
-  {date:"2/28",opponent:"神戸須磨クラブ", name:"橋本",  role:"救援",outs:3, ip:"1.0",ha:1,r:1,er:1,bb:0,hbp:0,k:0,hr:0},
-  {date:"2/28",opponent:"神戸須磨クラブ", name:"藤",    role:"救援",outs:3, ip:"1.0",ha:1,r:1,er:1,bb:0,hbp:0,k:0,hr:0},
-  {date:"2/28",opponent:"神戸須磨クラブ", name:"藤",    role:"先発",outs:6, ip:"2.0",ha:5,r:6,er:6,bb:2,hbp:0,k:1,hr:1},
-  {date:"2/28",opponent:"神戸須磨クラブ", name:"池田",  role:"救援",outs:6, ip:"2.0",ha:0,r:3,er:3,bb:2,hbp:0,k:1,hr:0},
-  {date:"2/28",opponent:"神戸須磨クラブ", name:"橋本",  role:"救援",outs:3, ip:"1.0",ha:6,r:6,er:6,bb:1,hbp:0,k:0,hr:0},
-  {date:"3/15",opponent:"泉大津ヤング",   name:"藤",    role:"先発",outs:15,ip:"5.0",ha:6,r:1,er:1,bb:1,hbp:0,k:1,hr:0},
-  {date:"3/15",opponent:"泉大津ヤング",   name:"宮下",  role:"救援",outs:6, ip:"2.0",ha:1,r:2,er:1,bb:1,hbp:0,k:2,hr:0},
-  {date:"3/15",opponent:"RBAヤング",      name:"青木",  role:"先発",outs:9, ip:"3.0",ha:0,r:1,er:1,bb:4,hbp:0,k:2,hr:0},
-  {date:"3/15",opponent:"RBAヤング",      name:"橋本",  role:"救援",outs:6, ip:"2.0",ha:2,r:2,er:1,bb:1,hbp:0,k:1,hr:0},
-  {date:"3/15",opponent:"RBAヤング",      name:"田之頭",role:"救援",outs:3, ip:"1.0",ha:3,r:2,er:2,bb:0,hbp:0,k:0,hr:0},
-  {date:"3/15",opponent:"RBAヤング",      name:"青木",  role:"救援",outs:2, ip:"0.2",ha:0,r:0,er:0,bb:1,hbp:0,k:2,hr:0},
-  {date:"3/15",opponent:"RBAヤング",      name:"宮下",  role:"救援",outs:1, ip:"0.1",ha:0,r:0,er:0,bb:0,hbp:1,k:1,hr:0},
-  {date:"3/20",opponent:"舞浜ヤング",     name:"青木",  role:"先発",outs:14,ip:"4.2",ha:4,r:3,er:3,bb:0,hbp:0,k:5,hr:0},
-  {date:"3/20",opponent:"舞浜ヤング",     name:"橋本",  role:"救援",outs:1, ip:"0.1",ha:0,r:0,er:0,bb:0,hbp:0,k:0,hr:0},
-  {date:"3/20",opponent:"舞浜ヤング",     name:"藤",    role:"救援",outs:6, ip:"2.0",ha:2,r:0,er:0,bb:3,hbp:0,k:0,hr:0},
-  {date:"3/20",opponent:"舞浜ヤング",     name:"藤",    role:"先発",outs:9, ip:"3.0",ha:3,r:3,er:3,bb:4,hbp:2,k:1,hr:1},
-  {date:"3/20",opponent:"舞浜ヤング",     name:"池田",  role:"救援",outs:1, ip:"0.1",ha:3,r:3,er:3,bb:2,hbp:0,k:1,hr:0},
-  {date:"3/20",opponent:"舞浜ヤング",     name:"橋本",  role:"救援",outs:5, ip:"1.2",ha:3,r:0,er:0,bb:0,hbp:0,k:1,hr:0},
-  {date:"3/20",opponent:"舞浜ヤング",     name:"田之頭",role:"救援",outs:6, ip:"2.0",ha:3,r:1,er:1,bb:0,hbp:0,k:1,hr:0},
-  {date:"3/21",opponent:"ヤングオール神戸",name:"藤",   role:"先発",outs:13,ip:"4.1",ha:2,r:3,er:3,bb:7,hbp:1,k:1,hr:1},
-  {date:"3/21",opponent:"ヤングオール神戸",name:"橋本", role:"救援",outs:2, ip:"0.2",ha:0,r:0,er:0,bb:0,hbp:0,k:0,hr:0},
-  {date:"3/21",opponent:"ヤングオール神戸",name:"青木", role:"救援",outs:3, ip:"1.0",ha:2,r:3,er:3,bb:2,hbp:0,k:1,hr:0},
-  {date:"3/21",opponent:"ヤングオール神戸",name:"橋本", role:"先発",outs:15,ip:"5.0",ha:1,r:0,er:0,bb:3,hbp:0,k:3,hr:0},
-  {date:"3/21",opponent:"ヤングオール神戸",name:"藤",   role:"救援",outs:3, ip:"1.0",ha:0,r:1,er:1,bb:1,hbp:0,k:0,hr:0},
-  {date:"3/21",opponent:"ヤングオール神戸",name:"青木", role:"救援",outs:3, ip:"1.0",ha:2,r:3,er:2,bb:2,hbp:0,k:1,hr:0},
-  {date:"3/21",opponent:"ヤングオール神戸",name:"三木", role:"救援",outs:2, ip:"0.2",ha:1,r:0,er:0,bb:0,hbp:0,k:0,hr:0},
-  {date:"3/21",opponent:"ヤングオール神戸",name:"池田", role:"救援",outs:4, ip:"1.1",ha:1,r:4,er:4,bb:4,hbp:2,k:0,hr:0},
+  {date:"2/15",opponent:"明日香ヤング",name:"宮下",role:"先発",outs:12, ip:"4.0",ha:1,r:0,er:0,bb:1,hbp:1,k:2,hr:0},
+  {date:"2/15",opponent:"明日香ヤング",name:"花井",role:"救援",outs:3, ip:"1.0",ha:1,r:0,er:0,bb:0,hbp:0,k:0,hr:0},
+  {date:"2/15",opponent:"明日香ヤング",name:"藤　妹",role:"救援",outs:6, ip:"2.0",ha:3,r:2,er:2,bb:2,hbp:0,k:0,hr:0},
+  {date:"2/21",opponent:"京都ヤング",name:"宮下",role:"先発",outs:9, ip:"3.0",ha:4,r:4,er:3,bb:3,hbp:0,k:3,hr:0},
+  {date:"2/21",opponent:"京都ヤング",name:"花井",role:"救援",outs:3, ip:"1.0",ha:2,r:3,er:3,bb:2,hbp:0,k:0,hr:1},
+  {date:"2/21",opponent:"京都ヤング",name:"藤　妹",role:"救援",outs:3, ip:"1.0",ha:2,r:2,er:2,bb:1,hbp:0,k:0,hr:0},
+  {date:"2/23",opponent:"和歌山ホークスヤング ①",name:"田之頭",role:"先発",outs:11, ip:"3.2",ha:5,r:3,er:3,bb:3,hbp:0,k:2,hr:0},
+  {date:"2/23",opponent:"和歌山ホークスヤング ①",name:"藤　妹",role:"救援",outs:7, ip:"2.1",ha:4,r:4,er:4,bb:3,hbp:0,k:2,hr:0},
+  {date:"2/23",opponent:"和歌山ホークスヤング ②",name:"宮下",role:"先発",outs:9, ip:"3.0",ha:3,r:0,er:0,bb:0,hbp:0,k:3,hr:0},
+  {date:"2/23",opponent:"和歌山ホークスヤング ②",name:"三木",role:"救援",outs:3, ip:"1.0",ha:2,r:0,er:0,bb:1,hbp:0,k:0,hr:0},
+  {date:"2/23",opponent:"和歌山ホークスヤング ②",name:"山中",role:"救援",outs:3, ip:"1.0",ha:0,r:0,er:0,bb:1,hbp:0,k:1,hr:0},
+  {date:"2/28",opponent:"ヤング神戸須磨クラブ ①",name:"宮下",role:"先発",outs:15, ip:"5.0",ha:5,r:4,er:3,bb:2,hbp:2,k:3,hr:0},
+  {date:"2/28",opponent:"ヤング神戸須磨クラブ ①",name:"山中",role:"救援",outs:3, ip:"1.0",ha:2,r:2,er:2,bb:1,hbp:0,k:0,hr:0},
+  {date:"2/28",opponent:"ヤング神戸須磨クラブ ②",name:"藤　妹",role:"先発",outs:6, ip:"2.0",ha:9,r:7,er:2,bb:0,hbp:0,k:0,hr:0},
+  {date:"2/28",opponent:"ヤング神戸須磨クラブ ②",name:"花井",role:"救援",outs:0, ip:"0.0",ha:1,r:3,er:3,bb:2,hbp:1,k:0,hr:0},
+  {date:"2/28",opponent:"ヤング神戸須磨クラブ ②",name:"尾西",role:"救援",outs:3, ip:"1.0",ha:4,r:7,er:7,bb:3,hbp:0,k:1,hr:0},
+  {date:"2/28",opponent:"ヤング神戸須磨クラブ ②",name:"山沖",role:"救援",outs:3, ip:"1.0",ha:1,r:3,er:3,bb:4,hbp:0,k:1,hr:0},
+  {date:"2/28",opponent:"ヤング神戸須磨クラブ ②",name:"三木",role:"救援",outs:3, ip:"1.0",ha:0,r:0,er:0,bb:0,hbp:0,k:1,hr:0},
+  {date:"3/20",opponent:"舞洲ヤング",name:"宮下",role:"先発",outs:9, ip:"3.0",ha:5,r:4,er:4,bb:4,hbp:0,k:2,hr:0},
+  {date:"3/20",opponent:"舞洲ヤング",name:"藤　妹",role:"救援",outs:6, ip:"2.0",ha:2,r:1,er:1,bb:1,hbp:0,k:0,hr:0},
+  {date:"3/20",opponent:"舞洲ヤング",name:"田之頭",role:"救援",outs:3, ip:"1.0",ha:1,r:0,er:0,bb:0,hbp:0,k:0,hr:0},
+  {date:"3/21",opponent:"ヤングオール神戸",name:"山中",role:"先発",outs:12, ip:"4.0",ha:1,r:1,er:1,bb:4,hbp:0,k:3,hr:0},
+  {date:"3/21",opponent:"ヤングオール神戸",name:"花井",role:"救援",outs:0, ip:"0.0",ha:3,r:3,er:3,bb:2,hbp:0,k:0,hr:0},
+  {date:"3/21",opponent:"ヤングオール神戸",name:"尾西",role:"救援",outs:4, ip:"1.1",ha:3,r:5,er:4,bb:1,hbp:0,k:0,hr:0},
+  {date:"3/29",opponent:"ナガセボーイズ",name:"宮下",role:"先発",outs:12, ip:"4.0",ha:4,r:4,er:4,bb:6,hbp:0,k:0,hr:0},
+  {date:"3/29",opponent:"ナガセボーイズ",name:"藤　妹",role:"救援",outs:3, ip:"1.0",ha:0,r:0,er:0,bb:1,hbp:0,k:0,hr:0},
+  {date:"3/29",opponent:"ナガセボーイズ",name:"清水",role:"救援",outs:6, ip:"2.0",ha:1,r:0,er:0,bb:1,hbp:0,k:3,hr:0},
+  {date:"4/25",opponent:"球道ヤング",name:"宮下",role:"先発",outs:9, ip:"3.0",ha:1,r:0,er:0,bb:0,hbp:0,k:3,hr:0},
+  {date:"4/25",opponent:"球道ヤング",name:"清水",role:"救援",outs:6, ip:"2.0",ha:4,r:1,er:1,bb:1,hbp:1,k:1,hr:0},
+  {date:"4/26",opponent:"貝塚ヤング",name:"宮下",role:"先発",outs:9, ip:"3.0",ha:5,r:4,er:4,bb:4,hbp:0,k:1,hr:0},
+  {date:"4/26",opponent:"貝塚ヤング",name:"山中",role:"救援",outs:12, ip:"4.0",ha:1,r:0,er:0,bb:3,hbp:0,k:1,hr:0},
+  {date:"4/26",opponent:"RBAヤング",name:"藤　妹",role:"先発",outs:12, ip:"4.0",ha:4,r:2,er:2,bb:1,hbp:0,k:1,hr:0},
+  {date:"4/26",opponent:"RBAヤング",name:"清水",role:"救援",outs:6, ip:"2.0",ha:1,r:0,er:0,bb:2,hbp:0,k:1,hr:0},
+  {date:"5/23",opponent:"ニューヤング ①",name:"宮下",role:"先発",outs:9, ip:"3.0",ha:4,r:2,er:2,bb:3,hbp:0,k:3,hr:0},
+  {date:"5/23",opponent:"ニューヤング ①",name:"山中",role:"救援",outs:3, ip:"1.0",ha:0,r:0,er:0,bb:1,hbp:1,k:1,hr:0},
+  {date:"5/23",opponent:"ニューヤング ②",name:"藤　妹",role:"先発",outs:9, ip:"3.0",ha:2,r:1,er:1,bb:1,hbp:0,k:0,hr:0},
+  {date:"5/23",opponent:"ニューヤング ②",name:"清水",role:"救援",outs:6, ip:"2.0",ha:2,r:2,er:1,bb:2,hbp:0,k:3,hr:0},
+  {date:"5/23",opponent:"ニューヤング ②",name:"武原",role:"救援",outs:6, ip:"2.0",ha:2,r:1,er:0,bb:1,hbp:0,k:0,hr:0},
+  {date:"5/30",opponent:"球道ヤング",name:"宮下",role:"先発",outs:14, ip:"4.2",ha:2,r:2,er:2,bb:2,hbp:0,k:3,hr:0},
+  {date:"5/30",opponent:"球道ヤング",name:"武原",role:"救援",outs:4, ip:"1.1",ha:0,r:0,er:0,bb:2,hbp:0,k:0,hr:0},
+  {date:"5/30",opponent:"RBAヤング",name:"藤　妹",role:"先発",outs:9, ip:"3.0",ha:3,r:3,er:0,bb:1,hbp:0,k:0,hr:0},
+  {date:"5/30",opponent:"RBAヤング",name:"櫻谷し",role:"救援",outs:3, ip:"1.0",ha:5,r:5,er:5,bb:2,hbp:0,k:1,hr:0},
+  {date:"5/30",opponent:"RBAヤング",name:"今村",role:"救援",outs:3, ip:"1.0",ha:1,r:0,er:0,bb:0,hbp:0,k:0,hr:0},
+  {date:"5/30",opponent:"RBAヤング",name:"石原",role:"救援",outs:3, ip:"1.0",ha:0,r:1,er:1,bb:2,hbp:0,k:1,hr:0},
+  {date:"5/30",opponent:"RBAヤング",name:"尾西",role:"救援",outs:1, ip:"0.1",ha:1,r:4,er:4,bb:2,hbp:0,k:0,hr:0},
+  {date:"5/30",opponent:"RBAヤング",name:"山中",role:"救援",outs:2, ip:"0.2",ha:2,r:1,er:1,bb:1,hbp:0,k:0,hr:0},
+  {date:"6/20",opponent:"和歌山ヤング ①",name:"宮下",role:"先発",outs:15, ip:"5.0",ha:4,r:1,er:0,bb:1,hbp:0,k:5,hr:0},
+  {date:"6/20",opponent:"和歌山ヤング ①",name:"今村",role:"救援",outs:1, ip:"0.1",ha:1,r:4,er:4,bb:6,hbp:0,k:0,hr:0},
+  {date:"6/20",opponent:"和歌山ヤング ①",name:"清水",role:"救援",outs:5, ip:"1.2",ha:0,r:0,er:0,bb:0,hbp:0,k:0,hr:0},
+  {date:"6/20",opponent:"和歌山ヤング ②",name:"田之頭",role:"先発",outs:9, ip:"3.0",ha:2,r:1,er:1,bb:2,hbp:0,k:3,hr:0},
+  {date:"6/20",opponent:"和歌山ヤング ②",name:"三木",role:"救援",outs:6, ip:"2.0",ha:3,r:0,er:0,bb:0,hbp:0,k:1,hr:0},
+  {date:"6/20",opponent:"和歌山ヤング ②",name:"武原",role:"救援",outs:6, ip:"2.0",ha:2,r:1,er:0,bb:1,hbp:0,k:1,hr:0},
 ];
 
 // チーム投手成績
-const TEAM_PITCH = {games:14,totalG:47,ip:"91.2",ha:113,r:98,er:86,bb:71,hbp:11,k:82,hr:5,era:8.44,whip:2.127,k9:8.05,bb9:6.97};
+const TEAM_PITCH = {games:18,totalG:52,ip:"108.1",ha:121,r:98,er:83,bb:90,hbp:6,k:57,hr:1,era:6.9,whip:1.948,k9:4.74,bb9:7.48};
 
 // ─── 計算 ────────────────────────────────────────────────────
 // 試合IDから日付・対戦相手・種別を抽出
@@ -3238,7 +3256,7 @@ function TeamPage(){
 // ═══════════════════════════════════════════════════════════════
 function PitchPage({teamFilter,typeFilter,totalGames}){
   const [sub,setSub]=useState("overview");
-  const [selected,setSelected]=useState("青木");
+  const [selected,setSelected]=useState("宮下");
   const [pTeam,setPTeam]=useState("ジュニア");
   const [pType,setPType]=useState("合計");
 
