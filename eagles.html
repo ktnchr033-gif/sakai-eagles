@@ -1509,7 +1509,7 @@ function calcStats(rows) {
 
 // 投手陣の合計成績を計算（PITCH_STATS系の配列を受け取り合算）
 function calcPitchTotals(rows){
-  const t={outs:0,ha:0,r:0,er:0,bb:0,hbp:0,k:0,hr:0};
+  const t={g:0,outs:0,ha:0,r:0,er:0,bb:0,hbp:0,k:0,hr:0};
   rows.forEach(row=>{ Object.keys(t).forEach(k=>{ t[k]+=row[k]||0; }); });
   const ip=t.outs/3;
   const ipDisplay=`${Math.floor(t.outs/3)}.${t.outs%3}`;
@@ -2976,7 +2976,7 @@ function TeamPage(){
         })()}
       </div>}
 
-      {mainTab==="pitching"&&<PitchPage/>}
+      {mainTab==="pitching"&&<PitchPage teamFilter={teamFilter} typeFilter={typeFilter} totalGames={totalGames}/>}
 
       <div style={{padding:"13px 14px 0",display:mainTab==="stats"?"block":"none"}}>
 
@@ -3236,7 +3236,7 @@ function TeamPage(){
 // ═══════════════════════════════════════════════════════════════
 //  投手ページ
 // ═══════════════════════════════════════════════════════════════
-function PitchPage(){
+function PitchPage({teamFilter,typeFilter,totalGames}){
   const [sub,setSub]=useState("overview");
   const [selected,setSelected]=useState("青木");
   const [pTeam,setPTeam]=useState("ジュニア");
@@ -3257,6 +3257,19 @@ function PitchPage(){
   };
   const currentPitchStats=getPitchStats();
 
+  // チーム概要タブ：上部の合計/ジュニア/レギュラー/スーパーJr・全試合/OP戦/公式戦フィルターに連動
+  const getOverviewRows=()=>{
+    const jrList  = PITCH_STATS; // ジュニアはOP/公式の区分データなし
+    const regList = typeFilter==="OP"?PITCH_STATS_REG_OP:typeFilter==="公式"?PITCH_STATS_REG_OFFICIAL:PITCH_STATS_REG;
+    const sjList  = typeFilter==="OP"?PITCH_STATS_SJ_OP:typeFilter==="公式"?PITCH_STATS_SJ_OFFICIAL:PITCH_STATS_SJ;
+    if(teamFilter==="ジュニア") return jrList;
+    if(teamFilter==="レギュラー") return regList;
+    if(teamFilter==="スーパーJr") return sjList;
+    return [...jrList,...regList,...sjList];
+  };
+  const overviewRows=getOverviewRows();
+  const overviewTotal=calcPitchTotals(overviewRows);
+
   const pitcher=currentPitchStats.find(p=>p.name===selected)||currentPitchStats[0]||{name:"-",g:0,gs:0,gf:0,outs:0,ip:"0.0",ha:0,r:0,er:0,bb:0,hbp:0,k:0,hr:0,era:0,whip:0,k9:0,bb9:0};
   const getStartList=()=>pTeam==="レギュラー"?PITCH_START_REG:pTeam==="スーパーJr"?PITCH_START_SJ:PITCH_START;
   const getReliefList=()=>pTeam==="レギュラー"?PITCH_RELIEF_REG:pTeam==="スーパーJr"?PITCH_RELIEF_SJ:PITCH_RELIEF;
@@ -3268,7 +3281,7 @@ function PitchPage(){
     <div style={{paddingBottom:80}}>
       <div style={{background:"linear-gradient(135deg,#1A2D42,#0B1520)",padding:"14px 14px 10px",borderBottom:`1px solid rgba(155,89,182,0.3)`}}>
         <div style={{fontSize:18,fontWeight:900,color:"#fff",marginBottom:2}}>投手成績</div>
-        <div style={{fontSize:11,color:C.sub,marginBottom:10}}>堺イーグルスジュニア 2025 · チームERA {TEAM_PITCH.era}</div>
+        <div style={{fontSize:11,color:C.sub,marginBottom:10}}>堺イーグルス{teamFilter&&teamFilter!=="合計"?teamFilter:""} 2025 · チームERA {overviewTotal.era}</div>
         <div style={{display:"flex",gap:4,overflowX:"auto"}}>
           {subTabs.map(t=>(
             <button key={t.id} onClick={()=>setSub(t.id)} style={{
@@ -3285,38 +3298,39 @@ function PitchPage(){
 
         {/* ── チーム概要 ── */}
         {sub==="overview"&&<>
-          <SL color={C.purple}>チーム投手成績（{TEAM_PITCH.games}試合）</SL>
+          <SL color={C.purple}>チーム投手成績（{totalGames!=null?totalGames:overviewTotal.g}試合）</SL>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:10}}>
-            <StatBox label="チームERA"  value={TEAM_PITCH.era}  color={C.purple}/>
-            <StatBox label="WHIP"       value={TEAM_PITCH.whip} color={C.blue}/>
-            <StatBox label="K/9"        value={TEAM_PITCH.k9}   color={C.green}/>
+            <StatBox label="チームERA"  value={overviewTotal.era}  color={C.purple}/>
+            <StatBox label="WHIP"       value={overviewTotal.whip} color={C.blue}/>
+            <StatBox label="K/9"        value={overviewTotal.k9}   color={C.green}/>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:12}}>
-            <StatBox label="総登板"  value={TEAM_PITCH.totalG} sub="G"/>
-            <StatBox label="奪三振" value={TEAM_PITCH.k}     sub="K"/>
-            <StatBox label="与四球" value={TEAM_PITCH.bb}    sub="BB" color="#E05A5A"/>
-            <StatBox label="被本塁打" value={TEAM_PITCH.hr}  sub="HR" color={C.gold}/>
+            <StatBox label="総登板"  value={overviewTotal.g} sub="G"/>
+            <StatBox label="奪三振" value={overviewTotal.k}     sub="K"/>
+            <StatBox label="与四球" value={overviewTotal.bb}    sub="BB" color="#E05A5A"/>
+            <StatBox label="被本塁打" value={overviewTotal.hr}  sub="HR" color={C.gold}/>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
             <div style={{background:"rgba(76,175,114,0.07)",borderRadius:12,padding:"12px",border:`1px solid rgba(76,175,114,0.2)`}}>
               <div style={{fontSize:10,color:C.green,fontWeight:700,marginBottom:6}}>BB/9</div>
-              <div style={{fontSize:24,fontWeight:900,color:C.green}}>{TEAM_PITCH.bb9}</div>
+              <div style={{fontSize:24,fontWeight:900,color:C.green}}>{overviewTotal.bb9}</div>
               <div style={{fontSize:10,color:C.dim,marginTop:2}}>四球÷投球回×9</div>
             </div>
             <div style={{background:"rgba(91,141,239,0.07)",borderRadius:12,padding:"12px",border:`1px solid rgba(91,141,239,0.2)`}}>
               <div style={{fontSize:10,color:C.blue,fontWeight:700,marginBottom:6}}>投球回</div>
-              <div style={{fontSize:24,fontWeight:900,color:C.blue}}>{TEAM_PITCH.ip}</div>
-              <div style={{fontSize:10,color:C.dim,marginTop:2}}>アウト数 275</div>
+              <div style={{fontSize:24,fontWeight:900,color:C.blue}}>{overviewTotal.ipDisplay}</div>
+              <div style={{fontSize:10,color:C.dim,marginTop:2}}>アウト数 {overviewTotal.outs}</div>
             </div>
           </div>
 
           {/* 投手別ERA比較バー */}
           <SL color={C.purple}>投手別 ERA</SL>
-          {[...PITCH_STATS].sort((a,b)=>a.era-b.era).map((p,i)=>{
-            const maxERA=Math.max(...PITCH_STATS.map(x=>x.era));
+          {overviewRows.length===0&&<div style={{color:C.sub,fontSize:12,padding:"8px 0"}}>このカテゴリーのデータはありません</div>}
+          {[...overviewRows].sort((a,b)=>a.era-b.era).map((p,i)=>{
+            const maxERA=Math.max(...overviewRows.map(x=>x.era));
             const pct=(p.era/maxERA)*100;
             return(
-              <div key={p.name} style={{marginBottom:8}}>
+              <div key={p.name+i} style={{marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
                   <div style={{display:"flex",gap:8,alignItems:"center"}}>
                     <span style={{fontSize:13,fontWeight:700,color:C.text}}>{p.name}</span>
@@ -3334,10 +3348,10 @@ function PitchPage(){
           })}
 
           {/* 投手別 奪三振 */}
-          <Card style={{marginTop:4}}>
+          {overviewRows.length>0&&<Card style={{marginTop:4}}>
             <SL color={C.green}>投手別 奪三振数</SL>
-            <MiniBar data={[...PITCH_STATS].sort((a,b)=>b.k-a.k).map(p=>({label:p.name,v:p.k}))} color={C.green} height={40}/>
-          </Card>
+            <MiniBar data={[...overviewRows].sort((a,b)=>b.k-a.k).map(p=>({label:p.name,v:p.k}))} color={C.green} height={40}/>
+          </Card>}
         </>}
 
         {/* ── 投手別 ── */}
