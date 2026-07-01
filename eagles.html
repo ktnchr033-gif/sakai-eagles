@@ -1381,6 +1381,60 @@ const PITCH_RELIEF = [
   {name:"今村",  g:2,outs:4, ip:"1.1", ha:2, r:4, er:4, bb:6,hbp:0,k:0,hr:0,era:27.0, whip:6.0},
   {name:"石原",  g:1,outs:3, ip:"1.0", ha:0, r:1, er:1, bb:2,hbp:0,k:1,hr:0,era:9.0,  whip:2.0},
 ];
+
+// ─── ジュニア OP戦 ───
+const PITCH_STATS_OP = [
+  {name:"宮下",  g:8,gs:8,gf:0,outs:90,ip:"30.0",ha:30,r:19,er:16,bb:20,hbp:3,k:21,hr:0,era:4.8, whip:1.667,k9:6.3, bb9:6.0},
+  {name:"花井",  g:4,gs:0,gf:4,outs:6, ip:"2.0", ha:7, r:9, er:9, bb:6, hbp:1,k:0, hr:1,era:40.5,whip:6.5,  k9:0.0, bb9:27.0},
+  {name:"藤　妹",g:8,gs:3,gf:5,outs:49,ip:"16.1",ha:25,r:20,er:12,bb:10,hbp:0,k:2, hr:0,era:6.61,whip:2.143,k9:1.1, bb9:5.51},
+  {name:"田之頭",g:3,gs:2,gf:1,outs:23,ip:"7.2", ha:8, r:4, er:4, bb:5, hbp:0,k:5, hr:0,era:4.7, whip:1.696,k9:5.87,bb9:5.87},
+  {name:"三木",  g:3,gs:0,gf:3,outs:12,ip:"4.0", ha:5, r:0, er:0, bb:1, hbp:0,k:2, hr:0,era:0.0, whip:1.5,  k9:4.5, bb9:2.25},
+  {name:"山中",  g:5,gs:1,gf:4,outs:23,ip:"7.2", ha:5, r:4, er:4, bb:8, hbp:1,k:5, hr:0,era:4.7, whip:1.696,k9:5.87,bb9:9.39},
+  {name:"尾西",  g:3,gs:0,gf:3,outs:8, ip:"2.2", ha:8, r:16,er:15,bb:6, hbp:0,k:1, hr:0,era:50.62,whip:5.25, k9:3.38,bb9:20.25},
+  {name:"山沖",  g:1,gs:0,gf:1,outs:3, ip:"1.0", ha:1, r:3, er:3, bb:4, hbp:0,k:1, hr:0,era:27.0,whip:5.0,  k9:9.0, bb9:36.0},
+  {name:"清水",  g:3,gs:0,gf:3,outs:17,ip:"5.2", ha:3, r:2, er:1, bb:3, hbp:0,k:6, hr:0,era:1.59,whip:1.059,k9:9.53,bb9:4.76},
+  {name:"武原",  g:2,gs:0,gf:2,outs:12,ip:"4.0", ha:4, r:2, er:0, bb:2, hbp:0,k:1, hr:0,era:0.0, whip:1.5,  k9:2.25,bb9:4.5},
+  {name:"櫻谷し",g:1,gs:0,gf:1,outs:3, ip:"1.0", ha:5, r:5, er:5, bb:2, hbp:0,k:1, hr:0,era:45.0,whip:7.0,  k9:9.0, bb9:18.0},
+  {name:"今村",  g:2,gs:0,gf:2,outs:4, ip:"1.1", ha:2, r:4, er:4, bb:6, hbp:0,k:0, hr:0,era:27.0,whip:6.0,  k9:0.0, bb9:40.5},
+  {name:"石原",  g:1,gs:0,gf:1,outs:3, ip:"1.0", ha:0, r:1, er:1, bb:2, hbp:0,k:1, hr:0,era:9.0, whip:2.0,  k9:9.0, bb9:18.0},
+];
+const PITCH_START_OP = [
+  {name:"宮下",  g:8,outs:90,ip:"30.0",ha:30,r:19,er:16,bb:20,hbp:3,k:21,hr:0,era:4.8, whip:1.667},
+  {name:"藤　妹",g:3,outs:24,ip:"8.0", ha:14,r:11,er:3, bb:2, hbp:0,k:0, hr:0,era:3.38,whip:2.0},
+  {name:"田之頭",g:2,outs:20,ip:"6.2", ha:7, r:4, er:4, bb:5, hbp:0,k:5, hr:0,era:5.4, whip:1.8},
+  {name:"山中",  g:1,outs:12,ip:"4.0", ha:1, r:1, er:1, bb:4, hbp:0,k:3, hr:0,era:2.25,whip:1.25},
+];
+const PITCH_RELIEF_OP = [
+  {name:"花井",  g:4,outs:6, ip:"2.0", ha:7, r:9, er:9, bb:6,hbp:1,k:0,hr:1,era:40.5, whip:6.5},
+  {name:"藤　妹",g:5,outs:25,ip:"8.1", ha:11,r:9, er:9, bb:8,hbp:0,k:2,hr:0,era:9.72, whip:2.28},
+  {name:"田之頭",g:1,outs:3, ip:"1.0", ha:1, r:0, er:0, bb:0,hbp:0,k:0,hr:0,era:0.0,  whip:1.0},
+  {name:"三木",  g:3,outs:12,ip:"4.0", ha:5, r:0, er:0, bb:1,hbp:0,k:2,hr:0,era:0.0,  whip:1.5},
+  {name:"山中",  g:4,outs:11,ip:"3.2", ha:4, r:3, er:3, bb:4,hbp:1,k:2,hr:0,era:7.36, whip:2.182},
+  {name:"尾西",  g:3,outs:8, ip:"2.2", ha:8, r:16,er:15,bb:6,hbp:0,k:1,hr:0,era:50.62,whip:5.25},
+  {name:"山沖",  g:1,outs:3, ip:"1.0", ha:1, r:3, er:3, bb:4,hbp:0,k:1,hr:0,era:27.0, whip:5.0},
+  {name:"清水",  g:3,outs:17,ip:"5.2", ha:3, r:2, er:1, bb:3,hbp:0,k:6,hr:0,era:1.59, whip:1.059},
+  {name:"武原",  g:2,outs:12,ip:"4.0", ha:4, r:2, er:0, bb:2,hbp:0,k:1,hr:0,era:0.0,  whip:1.5},
+  {name:"櫻谷し",g:1,outs:3, ip:"1.0", ha:5, r:5, er:5, bb:2,hbp:0,k:1,hr:0,era:45.0, whip:7.0},
+  {name:"今村",  g:2,outs:4, ip:"1.1", ha:2, r:4, er:4, bb:6,hbp:0,k:0,hr:0,era:27.0, whip:6.0},
+  {name:"石原",  g:1,outs:3, ip:"1.0", ha:0, r:1, er:1, bb:2,hbp:0,k:1,hr:0,era:9.0,  whip:2.0},
+];
+// ─── ジュニア 公式戦 ───
+const PITCH_STATS_OFFICIAL = [
+  {name:"宮下",  g:3,gs:3,gf:0,outs:32,ip:"10.2",ha:8,r:6,er:6,bb:6,hbp:0,k:7,hr:0,era:5.06,whip:1.312,k9:5.91,bb9:5.06},
+  {name:"清水",  g:2,gs:0,gf:2,outs:12,ip:"4.0", ha:5,r:1,er:1,bb:3,hbp:1,k:2,hr:0,era:2.25,whip:2.0,  k9:4.5, bb9:6.75},
+  {name:"山中",  g:1,gs:0,gf:1,outs:12,ip:"4.0", ha:1,r:0,er:0,bb:3,hbp:0,k:1,hr:0,era:0.0, whip:1.0,  k9:2.25,bb9:6.75},
+  {name:"藤　妹",g:1,gs:1,gf:0,outs:12,ip:"4.0", ha:4,r:2,er:2,bb:1,hbp:0,k:1,hr:0,era:4.5, whip:1.25, k9:2.25,bb9:2.25},
+  {name:"武原",  g:1,gs:0,gf:1,outs:4, ip:"1.1", ha:0,r:0,er:0,bb:2,hbp:0,k:0,hr:0,era:0.0, whip:1.5,  k9:0.0, bb9:13.5},
+];
+const PITCH_START_OFFICIAL = [
+  {name:"宮下",  g:3,outs:32,ip:"10.2",ha:8,r:6,er:6,bb:6,hbp:0,k:7,hr:0,era:5.06,whip:1.312},
+  {name:"藤　妹",g:1,outs:12,ip:"4.0", ha:4,r:2,er:2,bb:1,hbp:0,k:1,hr:0,era:4.5, whip:1.25},
+];
+const PITCH_RELIEF_OFFICIAL = [
+  {name:"清水",  g:2,outs:12,ip:"4.0",ha:5,r:1,er:1,bb:3,hbp:1,k:2,hr:0,era:2.25,whip:2.0},
+  {name:"山中",  g:1,outs:12,ip:"4.0",ha:1,r:0,er:0,bb:3,hbp:0,k:1,hr:0,era:0.0, whip:1.0},
+  {name:"武原",  g:1,outs:4, ip:"1.1",ha:0,r:0,er:0,bb:2,hbp:0,k:0,hr:0,era:0.0, whip:1.5},
+];
 // ─── レギュラー先発/救援別 ───
 const PITCH_START_REG = [
   {name:"橋本",g:2,outs:27,ip:"9.0",ha:8,r:4,er:4,bb:5,hbp:0,k:0,hr:0,era:4.0,whip:1.444},
@@ -2567,7 +2621,7 @@ function TeamPage(){
 
   // 投手成績集計（フィルターに応じた投手別データを合算）
   const getTeamPitchRows=()=>{
-    const jrList  = PITCH_STATS; // ジュニアはOP/公式の区分データなし
+    const jrList  = typeFilter==="OP"?PITCH_STATS_OP:typeFilter==="公式"?PITCH_STATS_OFFICIAL:PITCH_STATS;
     const regList = typeFilter==="OP"?PITCH_STATS_REG_OP:typeFilter==="公式"?PITCH_STATS_REG_OFFICIAL:PITCH_STATS_REG;
     const sjList  = typeFilter==="OP"?PITCH_STATS_SJ_OP:typeFilter==="公式"?PITCH_STATS_SJ_OFFICIAL:PITCH_STATS_SJ;
     if(teamFilter==="ジュニア") return jrList;
@@ -3271,13 +3325,13 @@ function PitchPage({teamFilter,typeFilter,totalGames}){
   const getPitchStats=()=>{
     if(pTeam==="レギュラー") return pType==="OP"?PITCH_STATS_REG_OP:pType==="公式"?PITCH_STATS_REG_OFFICIAL:PITCH_STATS_REG;
     if(pTeam==="スーパーJr") return pType==="OP"?PITCH_STATS_SJ_OP:pType==="公式"?PITCH_STATS_SJ_OFFICIAL:PITCH_STATS_SJ;
-    return PITCH_STATS; // ジュニアは既存データのまま
+    return pType==="OP"?PITCH_STATS_OP:pType==="公式"?PITCH_STATS_OFFICIAL:PITCH_STATS; // ジュニア
   };
   const currentPitchStats=getPitchStats();
 
   // チーム概要タブ：上部の合計/ジュニア/レギュラー/スーパーJr・全試合/OP戦/公式戦フィルターに連動
   const getOverviewRows=()=>{
-    const jrList  = PITCH_STATS; // ジュニアはOP/公式の区分データなし
+    const jrList  = typeFilter==="OP"?PITCH_STATS_OP:typeFilter==="公式"?PITCH_STATS_OFFICIAL:PITCH_STATS;
     const regList = typeFilter==="OP"?PITCH_STATS_REG_OP:typeFilter==="公式"?PITCH_STATS_REG_OFFICIAL:PITCH_STATS_REG;
     const sjList  = typeFilter==="OP"?PITCH_STATS_SJ_OP:typeFilter==="公式"?PITCH_STATS_SJ_OFFICIAL:PITCH_STATS_SJ;
     if(teamFilter==="ジュニア") return jrList;
@@ -3289,8 +3343,8 @@ function PitchPage({teamFilter,typeFilter,totalGames}){
   const overviewTotal=calcPitchTotals(overviewRows);
 
   const pitcher=currentPitchStats.find(p=>p.name===selected)||currentPitchStats[0]||{name:"-",g:0,gs:0,gf:0,outs:0,ip:"0.0",ha:0,r:0,er:0,bb:0,hbp:0,k:0,hr:0,era:0,whip:0,k9:0,bb9:0};
-  const getStartList=()=>pTeam==="レギュラー"?PITCH_START_REG:pTeam==="スーパーJr"?PITCH_START_SJ:PITCH_START;
-  const getReliefList=()=>pTeam==="レギュラー"?PITCH_RELIEF_REG:pTeam==="スーパーJr"?PITCH_RELIEF_SJ:PITCH_RELIEF;
+  const getStartList=()=>pTeam==="レギュラー"?PITCH_START_REG:pTeam==="スーパーJr"?PITCH_START_SJ:(pType==="OP"?PITCH_START_OP:pType==="公式"?PITCH_START_OFFICIAL:PITCH_START);
+  const getReliefList=()=>pTeam==="レギュラー"?PITCH_RELIEF_REG:pTeam==="スーパーJr"?PITCH_RELIEF_SJ:(pType==="OP"?PITCH_RELIEF_OP:pType==="公式"?PITCH_RELIEF_OFFICIAL:PITCH_RELIEF);
   const pitcherStart=getStartList().find(p=>p.name===selected);
   const pitcherRelief=getReliefList().find(p=>p.name===selected);
   const pitcherLog=PITCH_LOG.filter(p=>p.name===selected);
