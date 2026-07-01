@@ -2504,7 +2504,6 @@ function PlayerPage({player}){
 //  チームページ
 // ═══════════════════════════════════════════════════════════════
 function TeamPage(){
-  const [sort,setSort]=useState("ops");
   const [mainTab,setMainTab]=useState("stats");
   const [teamFilter,setTeamFilter]=useState("合計");
   const [typeFilter,setTypeFilter]=useState("合計");
@@ -2561,6 +2560,36 @@ function TeamPage(){
   const teamPitchTotal=calcPitchTotals(getTeamPitchRows());
 
   const [rankTab,setRankTab]=useState("batting");
+  const [rankCategory,setRankCategory]=useState("hit");
+  const RANK_CATEGORIES=[
+    {id:"hit",l:"打撃系",icon:"⚾"},
+    {id:"run",l:"走塁系",icon:"🏃"},
+    {id:"msr",l:"測定系",icon:"📊"},
+  ];
+  const RANK_TABS_BY_CATEGORY={
+    hit:[
+      {id:"batting",l:"打率"},
+      {id:"ops",l:"OPS"},
+      {id:"rbi",l:"打点"},
+      {id:"r",l:"得点"},
+      {id:"slg",l:"長打率"},
+      {id:"risp",l:"得点圏打率"},
+      {id:"lowk",l:"低三振"},
+      {id:"bbrate",l:"四球率"},
+      {id:"xbh",l:"長打数"},
+    ],
+    run:[
+      {id:"sb",l:"盗塁"},
+      {id:"dash",l:"駆け抜け"},
+      {id:"d2",l:"2塁到達"},
+      {id:"d3",l:"3塁到達"},
+      {id:"hr",l:"本塁到達"},
+    ],
+    msr:[
+      {id:"swing",l:"スイング速度"},
+      {id:"pitch",l:"球速"},
+    ],
+  };
   const [rankTeam,setRankTeam]=useState("合計");
   const rankBaseAll=rankTeam==="合計"?ALL_RECORDS:rankTeam==="ジュニア"?GAME_RECORDS:rankTeam==="レギュラー"?REG_GAME_RECORDS:SJ_GAME_RECORDS;
   const rankBaseRecords=typeFilter==="合計"?rankBaseAll:rankBaseAll.filter(r=>r.gameType===typeFilter);
@@ -2587,7 +2616,8 @@ function TeamPage(){
     const risp=rankRispMap[p]||null;
     const xbh=s.d2+s.d3+s.hr;
     const kp=s.pa>0?s.k/s.pa*100:999;
-    return {p,s,sb,tc:getTC(p),risp,xbh,kp};
+    const bbp=s.pa>0?s.bb/s.pa*100:0;
+    return {p,s,sb,tc:getTC(p),risp,xbh,kp,bbp};
   }).filter(x=>x.s.ab>=3);
 
   const measureRanks=rankPlayers.map(p=>{
@@ -2598,20 +2628,6 @@ function TeamPage(){
     return {p,tc:getTC(p),swingMax:sw?sw.max:null,swingAvg:sw?sw.avg:null,mound:pt?pt.mound:null,pd:pt?pt.pd:null,dash:br?br.dash:null,d2:br?br.d2:null,d3:br?br.d3:null,hr:br?br.hr:null};
   }).filter(x=>x.swingMax||x.mound||x.dash);
 
-  const playerRanks=[...new Set(filteredRecords.map(r=>r.player))].map(p=>{
-    const s=calcStats(filteredRecords.filter(r=>r.player===p));
-    const mh=MEASUREMENT[p]||[];
-    const sw=mh.find(e=>e.type==="swing");
-    const blastGrow=sw&&sw.history&&sw.history.length>=2?sw.history[sw.history.length-1].avg-sw.history[0].avg:null;
-    return {p,s,blastGrow};
-  }).filter(x=>x.s.ab>=3).sort((a,b)=>{
-    if(sort==="ops") return b.s.opsN-a.s.opsN;
-    if(sort==="avg") return b.s.avgN-a.s.avgN;
-    if(sort==="h")   return b.s.h-a.s.h;
-    if(sort==="rbi") return b.s.rbi-a.s.rbi;
-    if(sort==="blast") return (b.blastGrow||0)-(a.blastGrow||0);
-    return 0;
-  });
 
   const gameHits=[...new Set(filteredRecords.map(r=>r.opponent))].map(g=>({
     label:(()=>{
@@ -2734,25 +2750,20 @@ function TeamPage(){
             </button>
           ))}
         </div>
+        {/* ランキングカテゴリー */}
+        <div style={{display:"flex",gap:5,marginBottom:8}}>
+          {RANK_CATEGORIES.map(c=>(
+            <button key={c.id} onClick={()=>{setRankCategory(c.id);setRankTab(RANK_TABS_BY_CATEGORY[c.id][0].id);}}
+              style={{flex:1,background:rankCategory===c.id?"rgba(255,215,0,0.15)":"rgba(255,255,255,0.05)",
+                color:rankCategory===c.id?C.gold:C.sub,border:`1px solid ${rankCategory===c.id?C.gold:C.border}`,
+                borderRadius:12,padding:"8px 4px",fontSize:12,fontWeight:rankCategory===c.id?800:600,cursor:"pointer"}}>
+              {c.icon} {c.l}
+            </button>
+          ))}
+        </div>
         {/* ランキング種別タブ */}
         <div style={{display:"flex",gap:4,marginBottom:12,overflowX:"auto"}}>
-          {[
-            {id:"batting",l:"打撃"},
-            {id:"ops",l:"OPS"},
-            {id:"rbi",l:"打点"},
-            {id:"r",l:"得点"},
-            {id:"slg",l:"長打率"},
-            {id:"risp",l:"得点圏打率"},
-            {id:"lowk",l:"低三振"},
-            {id:"xbh",l:"長打数"},
-            {id:"sb",l:"盗塁"},
-            {id:"swing",l:"スイング"},
-            {id:"pitch",l:"球速"},
-            {id:"dash",l:"駆け抜け"},
-            {id:"d2",l:"2塁打"},
-            {id:"d3",l:"3塁打"},
-            {id:"hr",l:"HR"},
-          ].map(t=>(
+          {RANK_TABS_BY_CATEGORY[rankCategory].map(t=>(
             <button key={t.id} onClick={()=>setRankTab(t.id)}
               style={{background:rankTab===t.id?C.gold+"22":"rgba(255,255,255,0.05)",
                 color:rankTab===t.id?C.gold:C.sub,border:`1px solid ${rankTab===t.id?C.gold:C.border}`,
@@ -2848,6 +2859,21 @@ function TeamPage(){
               <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
               <div style={{fontSize:11,color:C.sub}}>K{s.k}/{s.pa}打席</div>
               <div style={{fontSize:20,fontWeight:900,color:"#4CAF72",minWidth:48,textAlign:"right"}}>{kp.toFixed(1)}<span style={{fontSize:10,color:C.sub}}>%</span></div>
+            </div>
+          ))}
+        </>}
+
+        {/* 四球率ランキング */}
+        {rankTab==="bbrate"&&<>
+          <div style={{fontSize:10,color:C.sub,fontWeight:700,letterSpacing:2,marginBottom:8}}>四球率ランキング（選球眼）</div>
+          {[...battingRanks].sort((a,b)=>b.bbp-a.bbp).map(({p,s,bbp,tc},i)=>(
+            <div key={p} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",
+              background:C.card,borderRadius:12,marginBottom:6,border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:i<3?18:14,width:28,textAlign:"center",fontWeight:900}}>{medal(i)}</div>
+              <div style={{width:6,height:6,borderRadius:"50%",background:teamColor2(tc),flexShrink:0}}/>
+              <div style={{flex:1,fontSize:13,fontWeight:700,color:C.text}}>{p}</div>
+              <div style={{fontSize:11,color:C.sub}}>BB{s.bb}/{s.pa}打席</div>
+              <div style={{fontSize:20,fontWeight:900,color:C.blue,minWidth:48,textAlign:"right"}}>{bbp.toFixed(1)}<span style={{fontSize:10,color:C.sub}}>%</span></div>
             </div>
           ))}
         </>}
@@ -3099,55 +3125,6 @@ function TeamPage(){
           <SL color={C.blue}>試合別チーム安打数</SL>
           <MiniBar data={gameHits} color={C.accent} height={36}/>
         </Card>
-
-        {/* 選手別ランキング */}
-        <SL>選手別成績</SL>
-        <div style={{display:"flex",gap:4,marginBottom:9,overflowX:"auto",paddingBottom:2}}>
-          {[["ops","OPS"],["avg","打率"],["h","安打"],["rbi","打点"],["blast","ブラスト成長"]].map(([k,l])=>(
-            <button key={k} onClick={()=>setSort(k)} style={{
-              flexShrink:0,padding:"4px 10px",borderRadius:20,border:"none",cursor:"pointer",
-              background:sort===k?"rgba(196,118,58,0.22)":"rgba(255,255,255,0.05)",
-              color:sort===k?C.accent:C.sub,fontSize:11,fontWeight:sort===k?800:500,
-              border:sort===k?`1px solid rgba(196,118,58,0.45)`:`1px solid ${C.border}`,
-            }}>{l}</button>
-          ))}
-        </div>
-        <div style={{fontSize:10,color:C.dim,marginBottom:8}}>※3打数以上 · 前回比・成長率優先表示</div>
-        {playerRanks.map(({p,s,blastGrow,speedGrow,runGrow})=>{
-          const mh=MEASUREMENT[p];
-          const latest=mh?mh[mh.length-1]:null;
-          const sbS=getSBStats(p);
-          return(
-            <Card key={p} style={{marginBottom:7}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <div style={{width:32,height:32,borderRadius:"50%",background:`linear-gradient(135deg,${C.accent},${C.accentB})`,
-                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:"#fff",flexShrink:0}}>
-                  {p[0]}
-                </div>
-                <div style={{flex:1}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontSize:14,fontWeight:700,color:C.text}}>{p}</span>
-                    <span style={{fontSize:16,fontWeight:900,color:C.blue}}>{s.avg}</span>
-                  </div>
-                  <div style={{display:"flex",gap:8,marginTop:3,flexWrap:"wrap"}}>
-                    <span style={{fontSize:11,color:C.sub}}>OPS {s.ops}</span>
-                    <span style={{fontSize:11,color:C.green}}>{s.h}安打</span>
-                    {s.hr>0&&<span style={{fontSize:11,color:C.gold}}>HR{s.hr}</span>}
-                    {sbS.sb>0&&<span style={{fontSize:11,color:C.green}}>🏃{sbS.sb}盗{sbS.cs>0?`/${sbS.cs}失`:""}</span>}
-                    {latest&&latest.batSpeed&&<span style={{fontSize:11,color:C.accent}}>🔷{latest.batSpeed}mph</span>}
-                    {blastGrow!==null&&blastGrow>0&&<span style={{fontSize:11,color:C.accentB}}>▲B+{blastGrow}</span>}
-                  </div>
-                </div>
-                <div style={{width:32}}>
-                  <div style={{height:4,background:C.border,borderRadius:2,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${Math.min(s.opsN/1.2*100,100)}%`,
-                      background:`linear-gradient(90deg,${C.blue},${C.accent})`,borderRadius:2}}/>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
 
         {/* 打順別チーム成績 */}
         <SL>📋 打順別チーム成績</SL>
