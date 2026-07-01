@@ -1789,7 +1789,7 @@ function PlayerPage({player}){
      relief:PITCH_RELIEF, reliefOP:PITCH_RELIEF_OP, reliefOfficial:PITCH_RELIEF_OFFICIAL, hasLog:true},
     {team:"レギュラー", stats:PITCH_STATS_REG, statsOP:PITCH_STATS_REG_OP, statsOfficial:PITCH_STATS_REG_OFFICIAL,
      start:PITCH_START_REG, relief:PITCH_RELIEF_REG, hasLog:false},
-    {team:"スーパーJr", stats:PITCH_STATS_SJ, statsOP:PITCH_STATS_SJ_OP, statsOfficial:PITCH_STATS_SJ_OFFICIAL,
+    {team:"スーパージュニア", stats:PITCH_STATS_SJ, statsOP:PITCH_STATS_SJ_OP, statsOfficial:PITCH_STATS_SJ_OFFICIAL,
      start:PITCH_START_SJ, relief:PITCH_RELIEF_SJ, hasLog:false},
   ];
   const pitchEntries = PITCH_SOURCES.map(src=>{
@@ -1804,6 +1804,8 @@ function PlayerPage({player}){
     return {team:src.team, row, startRow, reliefRow, log};
   }).filter(Boolean);
   const isPitcher = pitchEntries.length>0;
+  // 上部の合計/ジュニア/レギュラー/スーパージュニアフィルターに連動
+  const pitchEntriesShown = teamFilter==="合計"?pitchEntries:pitchEntries.filter(e=>e.team===teamFilter);
 
   const subTabsBase=[
     {id:"batting",l:"打撃",icon:"⚾"},
@@ -2605,13 +2607,13 @@ function PlayerPage({player}){
             ))}
           </div>
 
-          {pitchEntries.length===0&&(
+          {pitchEntriesShown.length===0&&(
             <div style={{textAlign:"center",padding:"30px 0",color:C.dim,fontSize:13}}>
               このカテゴリーでの投手データはありません
             </div>
           )}
 
-          {pitchEntries.map(({team,row,startRow,reliefRow,log})=>(
+          {pitchEntriesShown.map(({team,row,startRow,reliefRow,log})=>(
             <div key={team} style={{marginBottom:20}}>
               <SL color={C.purple}>{team}投手成績</SL>
               <div style={{background:"linear-gradient(135deg,rgba(155,89,182,0.12),rgba(155,89,182,0.05))",borderRadius:14,padding:"13px",marginBottom:10,border:"1px solid rgba(155,89,182,0.25)"}}>
