@@ -269,6 +269,20 @@ const GAME_RECORDS = [
   {opponent:"京都ヤング",player:"田代",team:"ジュニア",gameType:"OP",date:"2025/7/25",month:7,pa:2,ab:1,h:0,single:0,d2:0,d3:0,hr:0,bb:1,hbp:0,sf:0,sh:0,k:0,rbi:0,r:1},
   {opponent:"京都ヤング",player:"尾西",team:"ジュニア",gameType:"OP",date:"2025/7/25",month:7,pa:1,ab:0,h:0,single:0,d2:0,d3:0,hr:0,bb:0,hbp:0,sf:0,sh:1,k:0,rbi:1,r:0},
   {opponent:"京都ヤング",player:"花井",team:"ジュニア",gameType:"OP",date:"2025/7/25",month:7,pa:1,ab:1,h:0,single:0,d2:0,d3:0,hr:0,bb:0,hbp:0,sf:0,sh:0,k:0,rbi:0,r:0},
+  {opponent:"山直ボーイズ ②",player:"山沖",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:4,ab:2,h:0,single:0,d2:0,d3:0,hr:0,bb:2,hbp:0,sf:0,sh:0,k:2,rbi:0,r:0},
+  {opponent:"山直ボーイズ ②",player:"小川",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:3,ab:1,h:0,single:0,d2:0,d3:0,hr:0,bb:2,hbp:0,sf:0,sh:0,k:1,rbi:0,r:2},
+  {opponent:"山直ボーイズ ②",player:"三木",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:4,ab:2,h:2,single:0,d2:2,d3:0,hr:0,bb:2,hbp:0,sf:0,sh:0,k:0,rbi:3,r:4},
+  {opponent:"山直ボーイズ ②",player:"前田",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:3,ab:2,h:1,single:0,d2:1,d3:0,hr:0,bb:1,hbp:0,sf:0,sh:0,k:0,rbi:1,r:3},
+  {opponent:"山直ボーイズ ②",player:"山中",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:4,ab:3,h:3,single:2,d2:1,d3:0,hr:0,bb:1,hbp:0,sf:0,sh:0,k:0,rbi:3,r:1},
+  {opponent:"山直ボーイズ ②",player:"田代",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:4,ab:3,h:1,single:1,d2:0,d3:0,hr:0,bb:1,hbp:0,sf:0,sh:0,k:0,rbi:2,r:0},
+  {opponent:"山直ボーイズ ②",player:"清水",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:2,ab:1,h:1,single:1,d2:0,d3:0,hr:0,bb:1,hbp:0,sf:0,sh:0,k:0,rbi:0,r:0},
+  {opponent:"山直ボーイズ ②",player:"武原",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:2,ab:2,h:0,single:0,d2:0,d3:0,hr:0,bb:0,hbp:0,sf:0,sh:0,k:0,rbi:0,r:0},
+  {opponent:"山直ボーイズ ②",player:"金沢",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:2,ab:1,h:0,single:0,d2:0,d3:0,hr:0,bb:1,hbp:0,sf:0,sh:0,k:0,rbi:0,r:1},
+  {opponent:"山直ボーイズ ②",player:"花井",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:2,ab:0,h:0,single:0,d2:0,d3:0,hr:0,bb:2,hbp:0,sf:0,sh:0,k:0,rbi:0,r:1},
+  {opponent:"山直ボーイズ ②",player:"安岡",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:2,ab:1,h:0,single:0,d2:0,d3:0,hr:0,bb:1,hbp:0,sf:0,sh:0,k:0,rbi:0,r:1},
+  {opponent:"山直ボーイズ ②",player:"石原",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:1,ab:1,h:0,single:0,d2:0,d3:0,hr:0,bb:0,hbp:0,sf:0,sh:0,k:0,rbi:1,r:0},
+  {opponent:"山直ボーイズ ②",player:"田北",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:1,ab:0,h:0,single:0,d2:0,d3:0,hr:0,bb:1,hbp:0,sf:0,sh:0,k:0,rbi:1,r:1},
+  {opponent:"山直ボーイズ ②",player:"宮下",team:"ジュニア",gameType:"OP",date:"2025/8/8",month:8,pa:1,ab:1,h:1,single:1,d2:0,d3:0,hr:0,bb:0,hbp:0,sf:0,sh:0,k:0,rbi:0,r:1},
 ];
 
 
@@ -1182,7 +1196,7 @@ const ALL_SB_LOG = [...SB_LOG, ...REG_SB_LOG];
 
 // 選手カテゴリー（学年）を正確に手動管理
 // ※ 上のカテゴリーで試合に出ることがあっても「本来の学年」で色分け
-const JR_PLAYERS_MANUAL  = ["小川","三木","前田","清水","田之頭","山中","山沖","宮下","西村","北河","今村","花井","尾西","藤　妹"];
+const JR_PLAYERS_MANUAL  = ["小川","三木","前田","清水","田之頭","山中","山沖","宮下","西村","北河","今村","花井","尾西","藤　妹","田北"];
 const SJ_PLAYERS_MANUAL  = ["石原","安岡","武原","佐渡","北室","米田","櫻谷し","川中","金沢","田代","勇元","中","岡田","上田","河井","上阪","木下え"];
 // REG_PLAYERSはジュニア・SJ以外のレギュラー専属選手
 const REG_PLAYERS_MANUAL = ["木下","久保","櫻谷","青木","田中","藤","池田","松尾","園崎","山田","平見","橋本","大園","三木（L）"];
