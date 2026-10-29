@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>イーグルス スコアブック</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: 試合情報 → スコアボード → 罫線グリッドの打撃記録(左列固定・横スクロール) → 下部固定の操作バー */
+:root{
+  --paper:#f8faf8; --surface:#ffffff; --ink:#1b2621; --muted:#5a6d63;
+  --rule:#9dbcaa; --rule-soft:#dce9e1; --accent:#1d6a43; --accent-ink:#ffffff;
+  --run:#c3352b; --run-soft:#f6dcd9; --chip:#e8f1ec;
+  --f-display:"Dela Gothic One","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#111714; --surface:#19211d; --ink:#e2ebe5; --muted:#93a99c;
+  --rule:#3f5d4d; --rule-soft:#25352c; --accent:#5cc08a; --accent-ink:#0c1410;
+  --run:#ff7468; --run-soft:#3d2120; --chip:#213028; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#111714; --surface:#19211d; --ink:#e2ebe5; --muted:#93a99c;
+  --rule:#3f5d4d; --rule-soft:#25352c; --accent:#5cc08a; --accent-ink:#0c1410;
+  --run:#ff7468; --run-soft:#3d2120; --chip:#213028; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding-block:18px 110px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--f-display);font-weight:400;font-size:1.45rem;margin:0;letter-spacing:.02em;text-wrap:balance}
+h1 small{display:block;font-family:var(--f-body);font-size:.75rem;color:var(--muted);letter-spacing:.12em;font-weight:500}
+h2{font-size:.78rem;letter-spacing:.14em;color:var(--muted);margin:0 0 6px;font-weight:700}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.badge{font-size:.75rem;font-weight:700;background:var(--run-soft);color:var(--run);border-radius:4px;padding:3px 8px}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+label.f{display:flex;flex-direction:column;gap:2px;font-size:.72rem;color:var(--muted);font-weight:700;letter-spacing:.06em}
+input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:7px 9px;min-width:0;width:100%}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1.5px solid var(--rule);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;font-variant-numeric:tabular-nums}
+.line th,.line td{border:1px solid var(--rule-soft);padding:5px 0;text-align:center;min-width:34px;font-size:.95rem}
+.line th{font-size:.72rem;color:var(--muted);font-weight:700}
+.line td.team{text-align:left;padding:5px 10px;min-width:96px;font-weight:700;white-space:nowrap}
+.line td.team span{color:var(--muted);font-weight:500;font-size:.75rem;margin-right:4px}
+.line td.tot{font-weight:700;background:var(--chip)}
+.line td.R{color:var(--run);font-size:1.1rem}
+.line input{width:34px;border:0;background:transparent;text-align:center;padding:4px 0;font-variant-numeric:tabular-nums}
+.grid th,.grid td{border:1px solid var(--rule-soft)}
+.grid thead th{font-size:.72rem;color:var(--muted);font-weight:700;padding:4px 2px;background:var(--surface)}
+.grid thead th .outs{display:block;color:var(--run);letter-spacing:1px;font-size:.6rem;height:.8rem}
+.grid .nm{position:sticky;left:0;z-index:2;background:var(--surface);border-right:1.5px solid var(--rule);min-width:112px;max-width:112px}
+.grid td.nm button{all:unset;cursor:pointer;display:grid;grid-template-columns:18px 1fr;grid-template-rows:auto auto;column-gap:4px;padding:6px 8px;width:100%;box-sizing:border-box}
+.grid td.nm .no{grid-row:span 4;font-family:var(--f-display);color:var(--accent);font-size:1rem;align-self:center}
+.grid td.nm .pos{font-size:.68rem;color:var(--muted)}
+.grid td.nm .pn{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid td.c{padding:0;width:70px;min-width:70px;height:70px;vertical-align:top}
+.grid td.c button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px;width:100%;height:100%;min-height:70px;padding:4px;box-sizing:border-box}
+.grid td.c button:hover{background:var(--chip)}
+.grid td.c button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.pa{display:flex;align-items:center;gap:4px;line-height:1.1}
+.pa svg{flex:none}
+.pa .lb{font-weight:700;font-size:.82rem;white-space:nowrap}
+.pa .lb.hit{color:var(--accent)}
+.pa .rb{font-size:.62rem;color:var(--run);display:block;font-weight:700}
+.empty{margin:auto;color:var(--rule);font-size:1.1rem}
+.grid td.s{text-align:center;min-width:36px;padding:0 4px;font-size:.92rem}
+.grid th.s{min-width:36px}
+.grid .sep{border-left:1.5px solid var(--rule)}
+.grid tfoot td{font-weight:700;background:var(--chip);padding:6px 4px}
+.addrow{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--rule);background:var(--surface);border-radius:6px;padding:8px 12px;font-size:.88rem;font-weight:700}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.warn{color:var(--run);border-color:var(--run)}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1.5px solid var(--rule);padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar .in{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.bar .btn{padding:10px 4px;font-size:.82rem}
+.legend{font-size:.75rem;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.legend b{color:var(--ink)}
+/* sheet */
+.ov{position:fixed;inset:0;background:rgb(0 0 0 / .38);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--paper);width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:14px 14px 0 0;padding-top:14px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+.sh-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sh-h h3{margin:0;font-size:1.05rem}
+.x{border:0;background:none;font-size:1.4rem;line-height:1;padding:4px 8px;color:var(--muted)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--rule);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:.82rem}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.opts.nine{grid-template-columns:repeat(9,1fr)}
+.opts.five{grid-template-columns:repeat(5,1fr)}
+.opt{border:1px solid var(--rule);background:var(--surface);border-radius:6px;padding:9px 2px;font-size:.82rem;font-weight:700;text-align:center}
+.opt small{display:block;font-weight:400;font-size:.62rem;color:var(--muted)}
+.opt[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.opt[aria-pressed="true"] small{color:inherit}
+.opt:disabled{opacity:.35;cursor:not-allowed}
+.grp-l{font-size:.68rem;color:var(--muted);font-weight:700;letter-spacing:.1em;margin:2px 0 4px}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:36px;height:36px;border-radius:50%;border:1px solid var(--rule);background:var(--surface);font-size:1.2rem}
+.step output{min-width:24px;text-align:center;font-size:1.2rem;font-weight:700;font-variant-numeric:tabular-nums}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.preview{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px dashed var(--rule);border-radius:8px;padding:8px 12px}
+.preview .lb{font-size:1.15rem;font-weight:700}
+.acts{display:flex;gap:8px}
+.acts .btn{flex:1;padding:12px}
+.gl{display:flex;flex-direction:column;gap:6px}
+.gi{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--rule-soft);border-radius:8px;padding:8px 10px}
+.gi .t{flex:1;min-width:0}
+.gi .t b{display:block}
+.gi .t span{font-size:.75rem;color:var(--muted)}
+.gi .sc{font-family:var(--f-display);font-size:1.05rem;font-variant-numeric:tabular-nums}
+textarea{width:100%;min-height:150px;font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--ink);background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:8px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(80px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:999px;font-size:.85rem;font-weight:700;z-index:40}
+.muted{color:var(--muted);font-size:.8rem}
+.grid td.nm .sv{grid-column:2;font-size:.66rem;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.grid td.nm .sv b{color:var(--accent)}
+.grid td.nm .subl{color:var(--run);font-weight:700}
+.shd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:5px 12px;font-size:.78rem;font-weight:700}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.ss th,.ss td{border-bottom:1px solid var(--rule-soft);padding:7px 8px;text-align:right;white-space:nowrap;font-size:.88rem}
+.ss th{font-size:.7rem;color:var(--muted);font-weight:700;background:var(--surface);position:sticky;top:0}
+.ss td.l,.ss th.l{text-align:left;position:sticky;left:0;background:var(--surface)}
+.ss td.l b{margin-right:6px;color:var(--accent);font-family:var(--f-display);font-weight:400}
+.ss td.hi{color:var(--accent);font-weight:700}
+.ss td.td{color:var(--run);font-weight:700}
+.ss tr.none td{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--rule-soft);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 8px}
+.kv div{display:flex;flex-direction:column}
+.kv span{font-size:.64rem;color:var(--muted);font-weight:700;letter-spacing:.06em}
+.kv b{font-size:1.05rem;font-variant-numeric:tabular-nums}
+.roster{display:flex;flex-wrap:wrap;gap:6px;max-height:132px;overflow:auto}
+.warnbox{background:var(--run-soft);color:var(--run);border-radius:6px;padding:8px 10px;font-size:.8rem;font-weight:700}
+.exp{display:flex;flex-direction:column;gap:6px}
+.exp textarea{min-height:96px}
+.plist{display:flex;flex-direction:column;gap:6px}
+.prow{display:flex;align-items:stretch;background:var(--surface);border:1px solid var(--rule-soft);border-radius:8px;overflow:hidden}
+.prow.cur{border-color:var(--accent);box-shadow:inset 4px 0 0 var(--accent)}
+.prow .sel{all:unset;cursor:pointer;flex:1;min-width:0;padding:8px 12px;display:flex;flex-direction:column;gap:2px}
+.prow .sel:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.prow .pnm{font-weight:700;display:flex;gap:8px;align-items:baseline}
+.prow .pnm small{font-size:.7rem;color:var(--muted);font-weight:500}
+.prow .pnm .now{font-size:.66rem;color:var(--accent-ink);background:var(--accent);border-radius:3px;padding:1px 6px}
+.prow .pl{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums;display:flex;gap:10px;flex-wrap:wrap}
+.prow .pl b{color:var(--ink);font-weight:700}
+.prow .ed{border:0;border-left:1px solid var(--rule-soft);background:none;padding:0 14px;color:var(--muted);font-size:.8rem;font-weight:700}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.pad button{border:1px solid var(--rule);background:var(--surface);border-radius:8px;padding:12px 2px;font-weight:700;font-size:.86rem}
+.pad button.o{background:var(--chip)}
+.pad button.r{color:var(--run);border-color:var(--run)}
+.pad button:active{transform:scale(.97)}
+.pad .undo{grid-column:span 2;color:var(--muted)}
+.pitchrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+.pitchrow button{border:1.5px solid var(--rule);background:var(--surface);border-radius:10px;padding:16px 2px;font-weight:700;font-size:1rem}
+.pitchrow button.st{border-color:var(--accent);color:var(--accent)}
+.pitchrow button.bl{border-color:var(--muted)}
+.pitchrow button:active{transform:scale(.97)}
+.cnt{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px;font-variant-numeric:tabular-nums}
+.cnt .bso{display:flex;flex-direction:column;gap:3px}
+.cnt .bso div{display:flex;align-items:center;gap:5px;font-size:.72rem;font-weight:700;color:var(--muted)}
+.cnt .bso i{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--rule);display:inline-block}
+.cnt .bso i.onB{background:var(--accent);border-color:var(--accent)}
+.cnt .bso i.onS{background:#d9a21b;border-color:#d9a21b}
+.cnt .bso i.onO{background:var(--run);border-color:var(--run)}
+.cnt .bso span{width:12px}
+.cnt .tot{display:flex;gap:14px;font-size:.8rem;color:var(--muted)}
+.cnt .tot b{display:block;color:var(--ink);font-size:1.15rem}
+.sqc{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-size:.75rem;font-weight:700;border:1.5px solid var(--rule)}
+.sqc.S,.sqc.F{border-color:var(--accent);color:var(--accent)}
+.sqc.F{border-style:dashed}
+.pa .sqn{display:block;font-size:.6rem;color:var(--muted)}
+.hint{font-size:.72rem;color:var(--muted);margin:6px 0 0}
+.padh{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;gap:8px;flex-wrap:wrap}
+.padh b{font-size:.95rem}
+.stp{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 14px}
+.stp .step{justify-content:space-between}
+.stp .step button{width:36px;height:36px}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1><small>SAKAI EAGLES</small>イーグルス スコアブック</h1>
+    <span class="badge" id="sampleBadge" hidden>サンプル試合（新しい試合で消えます）</span>
+  </div>
+
+  <section class="meta" aria-label="試合情報">
+    <label class="f">日付<input type="date" id="m-date"></label>
+    <label class="f">対戦相手<input type="text" id="m-opp" placeholder="例：〇〇ジュニア"></label>
+    <label class="f">チーム<select id="m-team"><option>レギュラー</option><option>ジュニア</option><option>スーパージュニア</option></select></label>
+    <label class="f">区分<select id="m-kind"><option>公式</option><option>OP</option></select></label>
+    <label class="f">攻撃<select id="m-side"><option>先攻</option><option>後攻</option></select></label>
+  </section>
+
+  <section>
+    <h2>スコアボード</h2>
+    <div class="scroll"><table class="line" id="line"></table></div>
+  </section>
+
+  <section>
+    <h2>打撃記録 <span class="muted" style="letter-spacing:0;font-weight:500">マスをタップして入力</span></h2>
+    <div class="scroll"><table class="grid" id="grid"></table></div>
+    <div class="addrow" style="margin-top:8px">
+      <button class="btn" id="addInn">＋ 回を追加</button>
+      <button class="btn" id="addBat">＋ 打者を追加</button>
+    </div>
+    <div class="legend" style="margin-top:10px">
+      <span>ダイヤ線＝到達した塁</span><span><b style="color:var(--run)">赤塗り</b>＝得点</span><span><b>●</b>＝打点</span><span>盗死＝盗塁死（アウト数に加算）</span><span>見出しの●＝アウト数</span><span>名前の下＝シーズン打率 / 今日の成績</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="shd">
+      <h2>投手記録 <span class="muted" style="letter-spacing:0;font-weight:500">登板中の投手にボタンで加算</span></h2>
+      <button class="btn" id="addP">＋ 投手を追加</button>
+    </div>
+    <div class="plist" id="plist" style="margin-top:6px"></div>
+    <div id="padWrap"></div>
+  </section>
+
+  <section>
+    <div class="shd">
+      <h2>シーズン成績<span class="muted" style="letter-spacing:0;font-weight:500" id="ssNote"></span></h2>
+      <div class="seg" role="group" aria-label="集計する試合"><button data-sf="all" id="sf-all">全試合</button><button data-sf="公式" id="sf-off">公式</button><button data-sf="OP" id="sf-op">OP</button></div>
+    </div>
+    <div class="scroll" style="margin-top:6px"><table class="ss" id="ss"></table></div>
+    <div class="scroll" style="margin-top:10px"><table class="ss" id="ps"></table></div>
+    <p class="muted" style="margin:6px 0 0">「今日込」はシーズン成績にこの試合を足した打率・防御率です。防御率は元アプリと同じ9回換算です。</p>
+  </section>
+</div>
+
+<nav class="bar"><div class="in">
+  <button class="btn pri" id="bSave">試合を保存</button>
+  <button class="btn" id="bList">試合一覧</button>
+  <button class="btn" id="bCsv">アプリへ送る</button>
+  <button class="btn" id="bNew">新しい試合</button>
+</div></nav>
+
+<div class="ov" id="ov" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>const SEASON={"asof":"2025/9/21","from":"2025/2/15","R":[["三木","ジュニア","OP","2025/2/15","明日香ヤング",4,4,2,0,0,0,0,0,0,0,0,0,1],["小川","ジュニア","OP","2025/2/15","明日香ヤング",4,2,1,0,0,0,2,0,0,0,1,1,2],["山中","ジュニア","OP","2025/2/15","明日香ヤング",4,3,2,0,0,1,1,0,0,0,0,2,2],["前田","ジュニア","OP","2025/2/15","明日香ヤング",4,4,0,0,0,0,0,0,0,0,0,0,0],["北河","ジュニア","OP","2025/2/15","明日香ヤング",3,3,1,0,0,0,0,0,0,0,1,2,1],["山沖","ジュニア","OP","2025/2/15","明日香ヤング",4,3,2,0,0,0,0,0,0,1,1,2,1],["清水","ジュニア","OP","2025/2/15","明日香ヤング",4,3,0,0,0,0,1,0,0,0,1,0,0],["宮下","ジュニア","OP","2025/2/15","明日香ヤング",4,3,1,0,0,0,0,0,1,0,1,1,0],["西村","ジュニア","OP","2025/2/15","明日香ヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["花井","ジュニア","OP","2025/2/15","明日香ヤング",1,0,0,0,0,0,0,1,0,0,0,0,0],["今村","ジュニア","OP","2025/2/15","明日香ヤング",1,0,0,0,0,0,1,0,0,0,0,0,0],["三木","ジュニア","OP","2025/2/21","京都ヤング ①",3,2,2,0,1,0,1,0,0,0,0,0,0],["小川","ジュニア","OP","2025/2/21","京都ヤング ①",3,2,0,0,0,0,1,0,0,0,1,0,0],["山中","ジュニア","OP","2025/2/21","京都ヤング ①",2,2,0,0,0,0,0,0,0,0,1,0,0],["前田","ジュニア","OP","2025/2/21","京都ヤング ①",2,2,1,0,0,0,0,0,0,0,0,0,0],["清水","ジュニア","OP","2025/2/21","京都ヤング ①",2,2,1,0,0,0,0,0,0,0,0,0,0],["今村","ジュニア","OP","2025/2/21","京都ヤング ①",2,1,0,0,0,0,1,0,0,0,1,0,0],["宮下","ジュニア","OP","2025/2/21","京都ヤング ①",2,2,0,0,0,0,0,0,0,0,0,0,0],["西村","ジュニア","OP","2025/2/21","京都ヤング ①",1,1,0,0,0,0,0,0,0,0,0,0,0],["花井","ジュニア","OP","2025/2/21","京都ヤング ①",1,1,0,0,0,0,0,0,0,0,1,0,0],["尾西","ジュニア","OP","2025/2/21","京都ヤング ①",1,1,0,0,0,0,0,0,0,0,0,0,0],["藤　妹","ジュニア","OP","2025/2/21","京都ヤング ①",1,1,0,0,0,0,0,0,0,0,0,0,0],["三木","ジュニア","OP","2025/2/23","和歌山ホークスヤング ①",4,3,1,0,0,0,1,0,0,0,0,0,0],["小川","ジュニア","OP","2025/2/23","和歌山ホークスヤング ①",4,3,0,0,0,0,1,0,0,0,0,0,0],["田之頭","ジュニア","OP","2025/2/23","和歌山ホークスヤング ①",4,4,0,0,0,0,0,0,0,0,1,0,0],["前田","ジュニア","OP","2025/2/23","和歌山ホークスヤング ①",3,3,0,0,0,0,0,0,0,0,0,0,0],["山中","ジュニア","OP","2025/2/23","和歌山ホークスヤング ①",3,3,0,0,0,0,0,0,0,0,0,0,0],["宮下","ジュニア","OP","2025/2/23","和歌山ホークスヤング ①",3,3,0,0,0,0,0,0,0,0,0,0,0],["清水","ジュニア","OP","2025/2/23","和歌山ホークスヤング ①",3,1,1,0,0,0,2,0,0,0,0,0,1],["西村","ジュニア","OP","2025/2/23","和歌山ホークスヤング ①",3,3,2,0,0,0,0,0,0,0,0,0,1],["藤　妹","ジュニア","OP","2025/2/23","和歌山ホークスヤング ①",3,3,1,0,0,0,0,0,0,0,2,2,0],["三木","ジュニア","OP","2025/2/23","和歌山ホークスヤング ②",4,3,2,1,1,0,1,0,0,0,0,2,1],["小川","ジュニア","OP","2025/2/23","和歌山ホークスヤング ②",4,1,1,0,0,0,2,1,0,0,0,0,1],["田之頭","ジュニア","OP","2025/2/23","和歌山ホークスヤング ②",4,2,1,0,0,0,2,0,0,0,0,1,1],["前田","ジュニア","OP","2025/2/23","和歌山ホークスヤング ②",3,3,0,0,0,0,0,0,0,0,1,1,0],["山中","ジュニア","OP","2025/2/23","和歌山ホークスヤング ②",3,3,2,1,0,0,0,0,0,0,0,1,1],["清水","ジュニア","OP","2025/2/23","和歌山ホークスヤング ②",3,2,0,0,0,0,1,0,0,0,0,1,1],["宮下","ジュニア","OP","2025/2/23","和歌山ホークスヤング ②",3,3,2,0,0,0,0,0,0,0,0,0,1],["西村","ジュニア","OP","2025/2/23","和歌山ホークスヤング ②",3,1,0,0,0,0,2,0,0,0,0,0,2],["藤　妹","ジュニア","OP","2025/2/23","和歌山ホークスヤング ②",3,3,0,0,0,0,0,0,0,0,0,0,0],["三木","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ①",4,4,1,0,0,0,0,0,0,0,0,0,0],["小川","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ①",4,3,3,0,0,0,1,0,0,0,0,0,1],["山沖","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ①",4,2,1,0,0,0,2,0,0,0,0,0,1],["前田","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ①",4,3,1,0,0,0,1,0,0,0,0,0,1],["山中","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ①",4,3,2,1,0,0,1,0,0,0,0,2,1],["清水","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ①",4,4,1,0,0,0,0,0,0,0,0,0,0],["宮下","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ①",4,3,1,0,0,0,1,0,0,0,1,1,0],["尾西","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ①",4,3,2,0,0,0,0,1,0,0,1,0,1],["西村","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ①",4,4,0,0,0,0,0,0,0,0,0,0,0],["山中","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ②",3,2,2,0,0,0,1,0,0,0,0,0,1],["三木","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ②",3,3,2,1,0,0,0,0,0,0,0,1,1],["小川","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ②",3,3,0,0,0,0,0,0,0,0,0,0,1],["前田","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ②",3,3,1,1,0,0,0,0,0,0,0,2,0],["山沖","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ②",2,2,0,0,0,0,0,0,0,0,0,0,0],["清水","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ②",2,2,0,0,0,0,0,0,0,0,1,0,0],["宮下","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ②",2,2,1,0,0,0,0,0,0,0,0,0,0],["藤　妹","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["西村","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ②",2,2,0,0,0,0,0,0,0,0,0,0,0],["尾西","ジュニア","OP","2025/2/28","ヤング神戸須磨クラブ ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["三木","ジュニア","OP","2025/3/20","舞洲ヤング",4,4,2,0,0,0,0,0,0,0,0,1,0],["小川","ジュニア","OP","2025/3/20","舞洲ヤング",4,4,0,0,0,0,0,0,0,0,0,0,0],["田之頭","ジュニア","OP","2025/3/20","舞洲ヤング",4,4,1,0,0,0,0,0,0,0,0,0,0],["前田","ジュニア","OP","2025/3/20","舞洲ヤング",3,3,0,0,0,0,0,0,0,0,1,0,1],["山中","ジュニア","OP","2025/3/20","舞洲ヤング",3,3,2,0,0,0,0,0,0,0,0,0,0],["山沖","ジュニア","OP","2025/3/20","舞洲ヤング",3,3,1,0,0,0,0,0,0,0,0,1,0],["清水","ジュニア","OP","2025/3/20","舞洲ヤング",3,3,1,0,0,0,0,0,0,0,1,0,0],["宮下","ジュニア","OP","2025/3/20","舞洲ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["尾西","ジュニア","OP","2025/3/20","舞洲ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["藤　妹","ジュニア","OP","2025/3/20","舞洲ヤング",2,2,1,1,0,0,0,0,0,0,1,0,1],["今村","ジュニア","OP","2025/3/20","舞洲ヤング",2,2,0,0,0,0,0,0,0,0,2,0,0],["三木","ジュニア","OP","2025/3/21","ヤングオール神戸",3,3,1,0,0,0,0,0,0,0,0,0,0],["小川","ジュニア","OP","2025/3/21","ヤングオール神戸",3,3,0,0,0,0,0,0,0,0,0,0,0],["田之頭","ジュニア","OP","2025/3/21","ヤングオール神戸",3,3,1,0,0,0,0,0,0,0,0,0,1],["前田","ジュニア","OP","2025/3/21","ヤングオール神戸",3,3,2,0,0,0,0,0,0,0,0,0,1],["山中","ジュニア","OP","2025/3/21","ヤングオール神戸",3,3,0,0,0,0,0,0,0,0,1,1,0],["山沖","ジュニア","OP","2025/3/21","ヤングオール神戸",3,3,2,0,0,0,0,0,0,0,0,1,0],["清水","ジュニア","OP","2025/3/21","ヤングオール神戸",3,2,1,0,0,0,1,0,0,0,1,0,0],["宮下","ジュニア","OP","2025/3/21","ヤングオール神戸",3,3,0,0,0,0,0,0,0,0,0,0,0],["今村","ジュニア","OP","2025/3/21","ヤングオール神戸",2,2,1,0,0,0,0,0,0,0,0,0,0],["三木","ジュニア","OP","2025/3/29","ナガセボーイズ",4,4,3,1,0,0,0,0,0,0,0,2,1],["清水","ジュニア","OP","2025/3/29","ナガセボーイズ",4,3,2,1,0,0,1,0,0,0,0,1,2],["小川","ジュニア","OP","2025/3/29","ナガセボーイズ",4,4,1,0,0,0,0,0,0,0,1,1,0],["田之頭","ジュニア","OP","2025/3/29","ナガセボーイズ",4,4,2,1,0,0,0,0,0,0,0,0,0],["山沖","ジュニア","OP","2025/3/29","ナガセボーイズ",4,3,1,0,0,0,1,0,0,0,0,1,0],["山中","ジュニア","OP","2025/3/29","ナガセボーイズ",3,2,0,0,0,0,1,0,0,0,0,0,0],["今村","ジュニア","OP","2025/3/29","ナガセボーイズ",3,2,0,0,0,0,1,0,0,0,0,0,1],["宮下","ジュニア","OP","2025/3/29","ナガセボーイズ",2,1,1,0,0,0,1,0,0,0,0,0,1],["尾西","ジュニア","OP","2025/3/29","ナガセボーイズ",2,2,0,0,0,0,0,0,0,0,1,0,0],["前田","ジュニア","OP","2025/3/29","ナガセボーイズ",1,1,0,0,0,0,0,0,0,0,1,0,0],["北室","ジュニア","OP","2025/3/29","ナガセボーイズ",1,1,0,0,0,0,0,0,0,0,1,0,0],["三木","ジュニア","公式","2025/4/25","球道ヤング",4,2,1,0,0,0,2,0,0,0,0,0,2],["小川","ジュニア","公式","2025/4/25","球道ヤング",4,3,1,0,0,0,1,0,0,0,0,2,1],["田之頭","ジュニア","公式","2025/4/25","球道ヤング",4,3,1,0,0,0,1,0,0,0,0,3,2],["前田","ジュニア","公式","2025/4/25","球道ヤング",4,3,1,0,0,0,1,0,0,0,0,1,2],["山中","ジュニア","公式","2025/4/25","球道ヤング",4,3,2,1,0,0,1,0,0,0,0,4,1],["清水","ジュニア","公式","2025/4/25","球道ヤング",4,4,2,0,0,0,0,0,0,0,0,2,1],["山沖","ジュニア","公式","2025/4/25","球道ヤング",4,4,0,0,0,0,0,0,0,0,3,0,0],["宮下","ジュニア","公式","2025/4/25","球道ヤング",3,1,1,1,0,0,2,0,0,0,0,2,3],["今村","ジュニア","公式","2025/4/25","球道ヤング",3,0,0,0,0,0,3,0,0,0,0,0,2],["三木","ジュニア","公式","2025/4/26","貝塚ヤング",4,3,1,0,0,0,0,1,0,0,1,0,1],["小川","ジュニア","公式","2025/4/26","貝塚ヤング",4,4,0,0,0,0,0,0,0,0,0,0,1],["田之頭","ジュニア","公式","2025/4/26","貝塚ヤング",4,3,1,1,0,0,1,0,0,0,0,1,2],["前田","ジュニア","公式","2025/4/26","貝塚ヤング",4,4,2,2,0,0,0,0,0,0,0,3,1],["山中","ジュニア","公式","2025/4/26","貝塚ヤング",4,2,1,1,0,0,2,0,0,0,0,0,0],["清水","ジュニア","公式","2025/4/26","貝塚ヤング",4,4,2,0,0,0,0,0,0,0,0,1,0],["山沖","ジュニア","公式","2025/4/26","貝塚ヤング",4,2,1,0,0,0,1,0,0,1,1,0,0],["宮下","ジュニア","公式","2025/4/26","貝塚ヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["今村","ジュニア","公式","2025/4/26","貝塚ヤング",3,3,1,1,0,0,0,0,0,0,2,0,0],["西村","ジュニア","公式","2025/4/26","貝塚ヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["三木","ジュニア","公式","2025/4/26","RBAヤング",4,3,1,0,0,0,1,0,0,0,0,0,2],["小川","ジュニア","公式","2025/4/26","RBAヤング",3,2,0,0,0,0,0,1,0,0,0,0,1],["田之頭","ジュニア","公式","2025/4/26","RBAヤング",4,4,3,0,1,0,0,0,0,0,0,3,1],["前田","ジュニア","公式","2025/4/26","RBAヤング",3,3,1,1,0,0,0,0,0,0,0,0,1],["山中","ジュニア","公式","2025/4/26","RBAヤング",3,2,0,0,0,0,0,0,1,0,0,1,1],["清水","ジュニア","公式","2025/4/26","RBAヤング",3,3,3,1,0,0,0,0,0,0,0,1,2],["山沖","ジュニア","公式","2025/4/26","RBAヤング",3,2,1,0,0,0,1,0,0,0,0,1,1],["藤　妹","ジュニア","公式","2025/4/26","RBAヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["今村","ジュニア","公式","2025/4/26","RBAヤング",3,3,1,0,0,0,0,0,0,0,1,0,0],["尾西","ジュニア","公式","2025/4/26","RBAヤング",1,0,0,0,0,0,0,0,1,0,0,1,0],["宮下","ジュニア","公式","2025/4/26","RBAヤング",1,1,1,0,1,0,0,0,0,0,0,2,0],["花井","ジュニア","公式","2025/4/26","RBAヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["三木","ジュニア","OP","2025/5/23","ニューヤング ①",4,4,1,0,0,1,0,0,0,0,1,2,1],["今村","ジュニア","OP","2025/5/23","ニューヤング ①",3,3,3,0,0,0,0,0,0,0,0,0,2],["田之頭","ジュニア","OP","2025/5/23","ニューヤング ①",3,1,1,0,0,0,2,0,0,0,0,0,3],["前田","ジュニア","OP","2025/5/23","ニューヤング ①",3,3,2,0,0,1,0,0,0,0,1,4,1],["山中","ジュニア","OP","2025/5/23","ニューヤング ①",3,2,2,0,0,0,0,0,1,0,0,3,0],["清水","ジュニア","OP","2025/5/23","ニューヤング ①",3,3,1,0,0,0,0,0,0,0,0,0,2],["山沖","ジュニア","OP","2025/5/23","ニューヤング ①",3,2,2,0,0,0,1,0,0,0,0,1,2],["宮下","ジュニア","OP","2025/5/23","ニューヤング ①",3,3,1,0,0,0,0,0,0,0,0,2,0],["小川","ジュニア","OP","2025/5/23","ニューヤング ①",3,3,2,0,0,0,0,0,0,0,0,3,1],["三木","ジュニア","OP","2025/5/23","ニューヤング ②",4,3,1,0,0,0,1,0,0,0,0,0,1],["金沢","ジュニア","OP","2025/5/23","ニューヤング ②",2,2,0,0,0,0,0,0,0,0,0,0,0],["田之頭","ジュニア","OP","2025/5/23","ニューヤング ②",4,2,0,0,0,0,2,0,0,0,0,1,1],["前田","ジュニア","OP","2025/5/23","ニューヤング ②",4,3,1,1,0,0,1,0,0,0,1,1,1],["山中","ジュニア","OP","2025/5/23","ニューヤング ②",4,2,2,1,0,0,1,1,0,0,0,3,0],["尾西","ジュニア","OP","2025/5/23","ニューヤング ②",2,2,1,1,0,0,0,0,0,0,1,0,1],["山沖","ジュニア","OP","2025/5/23","ニューヤング ②",4,4,0,0,0,0,0,0,0,0,0,0,0],["藤　妹","ジュニア","OP","2025/5/23","ニューヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["清水","ジュニア","OP","2025/5/23","ニューヤング ②",4,4,1,0,0,0,0,0,0,0,0,1,1],["小川","ジュニア","OP","2025/5/23","ニューヤング ②",2,1,0,0,0,0,1,0,0,0,1,0,0],["安岡","ジュニア","OP","2025/5/23","ニューヤング ②",1,0,0,0,0,0,1,0,0,0,0,0,0],["花井","ジュニア","OP","2025/5/23","ニューヤング ②",1,0,0,0,0,0,0,0,0,1,0,0,0],["今村","ジュニア","OP","2025/5/23","ニューヤング ②",1,1,1,0,0,0,0,0,0,0,0,0,1],["武原","ジュニア","OP","2025/5/23","ニューヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["三木","ジュニア","公式","2025/5/30","球道ヤング",4,4,1,0,1,0,0,0,0,0,1,0,0],["今村","ジュニア","公式","2025/5/30","球道ヤング",4,4,1,0,0,0,0,0,0,0,1,0,0],["田之頭","ジュニア","公式","2025/5/30","球道ヤング",3,3,2,0,0,0,0,0,0,0,1,0,0],["前田","ジュニア","公式","2025/5/30","球道ヤング",3,3,0,0,0,0,0,0,0,0,1,0,0],["山中","ジュニア","公式","2025/5/30","球道ヤング",3,3,0,0,0,0,0,0,0,0,0,0,0],["山沖","ジュニア","公式","2025/5/30","球道ヤング",3,2,0,0,0,0,1,0,0,0,0,0,1],["清水","ジュニア","公式","2025/5/30","球道ヤング",3,3,1,0,0,0,0,0,0,0,1,1,0],["宮下","ジュニア","公式","2025/5/30","球道ヤング",2,1,0,0,0,0,0,1,0,0,1,0,0],["西村","ジュニア","公式","2025/5/30","球道ヤング",3,2,1,0,0,0,0,1,0,0,0,0,0],["川中","ジュニア","公式","2025/5/30","球道ヤング",1,0,0,0,0,0,1,0,0,0,0,0,0],["川中","ジュニア","OP","2025/5/30","RBAヤング",4,4,1,0,0,0,0,0,0,0,1,0,1],["安岡","ジュニア","OP","2025/5/30","RBAヤング",4,4,2,0,0,0,0,0,0,0,1,0,2],["三木","ジュニア","OP","2025/5/30","RBAヤング",4,4,2,0,1,0,0,0,0,0,0,2,2],["田之頭","ジュニア","OP","2025/5/30","RBAヤング",2,1,1,0,0,0,0,0,1,0,0,1,0],["佐渡","ジュニア","OP","2025/5/30","RBAヤング",4,3,1,0,0,0,1,0,0,0,0,0,1],["石原","ジュニア","OP","2025/5/30","RBAヤング",4,4,3,0,1,0,0,0,0,0,0,3,1],["米田","ジュニア","OP","2025/5/30","RBAヤング",3,3,2,0,0,0,0,0,0,0,0,1,1],["藤　妹","ジュニア","OP","2025/5/30","RBAヤング",2,2,1,0,0,0,0,0,0,0,0,1,0],["花井","ジュニア","OP","2025/5/30","RBAヤング",2,2,0,0,0,0,0,0,0,0,0,0,0],["武原","ジュニア","OP","2025/5/30","RBAヤング",2,2,0,0,0,0,0,0,0,0,0,0,0],["櫻谷し","ジュニア","OP","2025/5/30","RBAヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["今村","ジュニア","OP","2025/5/30","RBAヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["前田","ジュニア","OP","2025/5/30","RBAヤング",1,0,0,0,0,0,1,0,0,0,0,0,0],["山沖","ジュニア","OP","2025/5/30","RBAヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["三木","ジュニア","OP","2025/6/20","和歌山ヤング ①",4,4,2,0,1,0,0,0,0,0,1,2,1],["小川","ジュニア","OP","2025/6/20","和歌山ヤング ①",4,3,0,0,0,0,1,0,0,0,0,0,1],["田之頭","ジュニア","OP","2025/6/20","和歌山ヤング ①",3,3,1,1,0,0,0,0,0,0,0,1,1],["前田","ジュニア","OP","2025/6/20","和歌山ヤング ①",3,3,2,1,0,0,0,0,0,0,1,1,0],["今村","ジュニア","OP","2025/6/20","和歌山ヤング ①",3,3,0,0,0,0,0,0,0,0,1,0,0],["清水","ジュニア","OP","2025/6/20","和歌山ヤング ①",3,2,1,0,0,0,1,0,0,0,1,0,1],["山沖","ジュニア","OP","2025/6/20","和歌山ヤング ①",3,3,2,1,0,0,0,0,0,0,0,0,1],["宮下","ジュニア","OP","2025/6/20","和歌山ヤング ①",2,2,1,0,0,0,0,0,0,0,1,1,1],["尾西","ジュニア","OP","2025/6/20","和歌山ヤング ①",3,2,0,0,0,0,0,1,0,0,0,0,1],["西村","ジュニア","OP","2025/6/20","和歌山ヤング ①",1,0,0,0,0,0,0,0,0,1,0,0,0],["山沖","ジュニア","OP","2025/6/20","和歌山ヤング ②",3,3,1,1,0,0,0,0,0,0,0,0,0],["安岡","ジュニア","OP","2025/6/20","和歌山ヤング ②",2,2,1,0,0,0,0,0,0,0,1,1,0],["三木","ジュニア","OP","2025/6/20","和歌山ヤング ②",3,3,1,0,0,0,0,0,0,0,1,0,0],["前田","ジュニア","OP","2025/6/20","和歌山ヤング ②",3,3,1,0,0,0,0,0,0,0,0,0,0],["田之頭","ジュニア","OP","2025/6/20","和歌山ヤング ②",3,3,0,0,0,0,0,0,0,0,0,0,0],["清水","ジュニア","OP","2025/6/20","和歌山ヤング ②",2,2,0,0,0,0,0,0,0,0,0,0,0],["小川","ジュニア","OP","2025/6/20","和歌山ヤング ②",3,3,2,0,0,0,0,0,0,0,0,0,1],["西村","ジュニア","OP","2025/6/20","和歌山ヤング ②",2,2,1,0,0,0,0,0,0,0,0,0,1],["花井","ジュニア","OP","2025/6/20","和歌山ヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["石原","ジュニア","OP","2025/6/20","和歌山ヤング ②",1,0,0,0,0,0,1,0,0,0,0,0,0],["川中","ジュニア","OP","2025/6/20","和歌山ヤング ②",1,1,0,0,0,0,0,0,0,0,1,0,0],["尾西","ジュニア","OP","2025/6/20","和歌山ヤング ②",1,1,0,0,0,0,0,0,0,0,1,0,0],["宮下","ジュニア","OP","2025/6/20","和歌山ヤング ②",1,1,1,0,0,0,0,0,0,0,0,1,0],["今村","ジュニア","OP","2025/6/20","和歌山ヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["三木","ジュニア","OP","2025/7/4","ヤングオール神戸",5,3,1,0,0,0,2,0,0,0,0,0,2],["山沖","ジュニア","OP","2025/7/4","ヤングオール神戸",5,5,1,0,1,0,0,0,0,0,3,0,1],["田之頭","ジュニア","OP","2025/7/4","ヤングオール神戸",5,5,4,2,0,0,0,0,0,0,0,4,3],["前田","ジュニア","OP","2025/7/4","ヤングオール神戸",5,4,3,1,0,0,1,0,0,0,0,2,3],["山中","ジュニア","OP","2025/7/4","ヤングオール神戸",5,5,3,1,0,0,0,0,0,0,0,3,1],["宮下","ジュニア","OP","2025/7/4","ヤングオール神戸",2,0,0,0,0,0,2,0,0,0,0,0,0],["小川","ジュニア","OP","2025/7/4","ヤングオール神戸",5,3,1,0,0,0,1,0,0,1,1,0,1],["西村","ジュニア","OP","2025/7/4","ヤングオール神戸",2,2,1,0,0,0,0,0,0,0,1,1,0],["今村","ジュニア","OP","2025/7/4","ヤングオール神戸",4,4,0,0,0,0,0,0,0,0,2,0,0],["藤　妹","ジュニア","OP","2025/7/4","ヤングオール神戸",1,1,1,0,0,0,0,0,0,0,0,1,0],["尾西","ジュニア","OP","2025/7/4","ヤングオール神戸",2,2,0,0,0,0,0,0,0,0,1,0,1],["花井","ジュニア","OP","2025/7/4","ヤングオール神戸",2,2,1,0,0,0,0,0,0,0,0,0,1],["三木","ジュニア","OP","2025/7/18","打田タイガース",2,2,0,0,0,0,0,0,0,0,1,0,0],["小川","ジュニア","OP","2025/7/18","打田タイガース",2,2,0,0,0,0,0,0,0,0,0,0,0],["田之頭","ジュニア","OP","2025/7/18","打田タイガース",2,2,0,0,0,0,0,0,0,0,0,0,0],["前田","ジュニア","OP","2025/7/18","打田タイガース",2,2,0,0,0,0,0,0,0,0,1,0,0],["山中","ジュニア","OP","2025/7/18","打田タイガース",2,2,0,0,0,0,0,0,0,0,1,0,0],["山沖","ジュニア","OP","2025/7/18","打田タイガース",2,2,0,0,0,0,0,0,0,0,0,0,0],["宮下","ジュニア","OP","2025/7/18","打田タイガース",1,1,1,0,0,0,0,0,0,0,0,0,0],["清水","ジュニア","OP","2025/7/18","打田タイガース",1,1,0,0,0,0,0,0,0,0,1,0,0],["今村","ジュニア","OP","2025/7/18","打田タイガース",2,2,1,0,0,0,0,0,0,0,1,0,0],["尾西","ジュニア","OP","2025/7/18","打田タイガース",1,1,1,0,0,0,0,0,0,0,0,0,0],["西村","ジュニア","OP","2025/7/18","打田タイガース",1,1,0,0,0,0,0,0,0,0,1,0,0],["三木","ジュニア","OP","2025/7/19","和歌山ホークスヤング",4,3,1,0,0,0,1,0,0,0,0,0,1],["田之頭","ジュニア","OP","2025/7/19","和歌山ホークスヤング",4,3,0,0,0,0,0,0,1,0,0,1,0],["山中","ジュニア","OP","2025/7/19","和歌山ホークスヤング",3,3,2,0,0,0,0,0,0,0,0,0,0],["前田","ジュニア","OP","2025/7/19","和歌山ホークスヤング",3,3,2,1,0,0,0,0,0,0,0,1,0],["小川","ジュニア","OP","2025/7/19","和歌山ホークスヤング",3,3,1,1,0,0,0,0,0,0,1,0,0],["尾西","ジュニア","OP","2025/7/19","和歌山ホークスヤング",3,1,0,0,0,0,0,2,0,0,1,0,0],["清水","ジュニア","OP","2025/7/19","和歌山ホークスヤング",3,3,0,0,0,0,0,0,0,0,1,0,0],["今村","ジュニア","OP","2025/7/19","和歌山ホークスヤング",3,3,0,0,0,0,0,0,0,0,1,0,0],["山沖","ジュニア","OP","2025/7/19","和歌山ホークスヤング",3,3,2,0,0,0,0,0,0,0,1,0,1],["山沖","ジュニア","OP","2025/7/20","ニューヤング",4,4,1,0,1,0,0,0,0,0,0,0,0],["田之頭","ジュニア","OP","2025/7/20","ニューヤング",4,4,3,0,1,0,0,0,0,0,0,2,3],["三木","ジュニア","OP","2025/7/20","ニューヤング",4,3,2,1,1,0,0,0,1,0,0,3,3],["前田","ジュニア","OP","2025/7/20","ニューヤング",4,2,1,0,0,0,2,0,0,0,1,0,2],["山中","ジュニア","OP","2025/7/20","ニューヤング",4,2,1,0,0,0,2,0,0,0,0,2,3],["小川","ジュニア","OP","2025/7/20","ニューヤング",2,1,1,0,0,0,0,1,0,0,0,1,0],["今村","ジュニア","OP","2025/7/20","ニューヤング",3,2,2,0,0,0,1,0,0,0,0,2,1],["西村","ジュニア","OP","2025/7/20","ニューヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["石原","ジュニア","OP","2025/7/20","ニューヤング",3,1,1,0,0,0,2,0,0,0,0,0,1],["金沢","ジュニア","OP","2025/7/20","ニューヤング",1,1,1,0,0,0,0,0,0,0,0,1,1],["田代","ジュニア","OP","2025/7/20","ニューヤング",1,1,1,0,0,0,0,0,0,0,0,1,0],["安岡","ジュニア","OP","2025/7/20","ニューヤング",1,1,1,0,0,0,0,0,0,0,0,1,0],["三木","ジュニア","OP","2025/7/25","京都ヤング",4,4,3,1,0,0,0,0,0,0,0,2,3],["清水","ジュニア","OP","2025/7/25","京都ヤング",4,4,2,0,0,0,0,0,0,0,0,1,2],["田之頭","ジュニア","OP","2025/7/25","京都ヤング",4,4,3,2,0,0,0,0,0,0,0,3,1],["前田","ジュニア","OP","2025/7/25","京都ヤング",4,4,2,0,0,0,0,0,0,0,0,2,1],["山中","ジュニア","OP","2025/7/25","京都ヤング",4,4,1,0,0,0,0,0,0,0,0,2,1],["小川","ジュニア","OP","2025/7/25","京都ヤング",4,3,2,0,0,0,1,0,0,0,1,0,1],["宮下","ジュニア","OP","2025/7/25","京都ヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["西村","ジュニア","OP","2025/7/25","京都ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["今村","ジュニア","OP","2025/7/25","京都ヤング",3,3,1,0,0,0,0,0,0,0,0,0,1],["田代","ジュニア","OP","2025/7/25","京都ヤング",2,1,0,0,0,0,1,0,0,0,0,0,1],["尾西","ジュニア","OP","2025/7/25","京都ヤング",1,0,0,0,0,0,0,0,0,1,0,1,0],["花井","ジュニア","OP","2025/7/25","京都ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["山沖","ジュニア","OP","2025/8/8","山直ボーイズ ②",4,2,0,0,0,0,2,0,0,0,2,0,0],["小川","ジュニア","OP","2025/8/8","山直ボーイズ ②",3,1,0,0,0,0,2,0,0,0,1,0,2],["三木","ジュニア","OP","2025/8/8","山直ボーイズ ②",4,2,2,2,0,0,2,0,0,0,0,3,4],["前田","ジュニア","OP","2025/8/8","山直ボーイズ ②",3,2,1,1,0,0,1,0,0,0,0,1,3],["山中","ジュニア","OP","2025/8/8","山直ボーイズ ②",4,3,3,1,0,0,1,0,0,0,0,3,1],["田代","ジュニア","OP","2025/8/8","山直ボーイズ ②",4,3,1,0,0,0,1,0,0,0,0,2,0],["清水","ジュニア","OP","2025/8/8","山直ボーイズ ②",2,1,1,0,0,0,1,0,0,0,0,0,0],["武原","ジュニア","OP","2025/8/8","山直ボーイズ ②",2,2,0,0,0,0,0,0,0,0,0,0,0],["金沢","ジュニア","OP","2025/8/8","山直ボーイズ ②",2,1,0,0,0,0,1,0,0,0,0,0,1],["花井","ジュニア","OP","2025/8/8","山直ボーイズ ②",2,0,0,0,0,0,2,0,0,0,0,0,1],["安岡","ジュニア","OP","2025/8/8","山直ボーイズ ②",2,1,0,0,0,0,1,0,0,0,0,0,1],["石原","ジュニア","OP","2025/8/8","山直ボーイズ ②",1,1,0,0,0,0,0,0,0,0,0,1,0],["田北","ジュニア","OP","2025/8/8","山直ボーイズ ②",1,0,0,0,0,0,1,0,0,0,0,1,1],["宮下","ジュニア","OP","2025/8/8","山直ボーイズ ②",1,1,1,0,0,0,0,0,0,0,0,0,1],["三木","ジュニア","公式","2025/8/11","ヤング徳島ホークス",5,4,0,0,0,0,0,0,0,1,2,0,0],["小川","ジュニア","公式","2025/8/11","ヤング徳島ホークス",5,5,0,0,0,0,0,0,0,0,1,0,1],["田之頭","ジュニア","公式","2025/8/11","ヤング徳島ホークス",5,4,2,1,1,0,0,0,1,0,0,2,0],["前田","ジュニア","公式","2025/8/11","ヤング徳島ホークス",4,4,1,0,0,1,0,0,0,0,1,1,1],["山中","ジュニア","公式","2025/8/11","ヤング徳島ホークス",4,4,0,0,0,0,0,0,0,0,0,1,0],["清水","ジュニア","公式","2025/8/11","ヤング徳島ホークス",4,4,2,1,0,0,0,0,0,0,0,0,0],["山沖","ジュニア","公式","2025/8/11","ヤング徳島ホークス",4,4,1,0,0,0,0,0,0,0,2,0,0],["今村","ジュニア","公式","2025/8/11","ヤング徳島ホークス",3,3,0,0,0,0,0,0,0,0,2,0,0],["金沢","ジュニア","公式","2025/8/11","ヤング徳島ホークス",1,0,0,0,0,0,0,1,0,0,0,0,1],["尾西","ジュニア","公式","2025/8/11","ヤング徳島ホークス",1,0,0,0,0,0,0,1,0,0,0,0,1],["宮下","ジュニア","公式","2025/8/11","ヤング徳島ホークス",1,1,0,0,0,0,0,0,0,0,1,0,0],["田代","ジュニア","公式","2025/8/11","ヤング徳島ホークス",1,0,0,0,0,0,1,0,0,0,0,0,0],["安岡","ジュニア","公式","2025/8/11","ヤング徳島ホークス",1,1,1,0,0,0,0,0,0,0,0,0,0],["三木","ジュニア","OP","2025/8/16","ニューヤング ①",4,4,3,1,0,0,0,0,0,0,0,0,3],["小川","ジュニア","OP","2025/8/16","ニューヤング ①",4,4,2,0,0,0,0,0,0,0,0,0,2],["田之頭","ジュニア","OP","2025/8/16","ニューヤング ①",4,4,2,0,0,0,0,0,0,0,1,2,2],["前田","ジュニア","OP","2025/8/16","ニューヤング ①",4,3,1,0,0,0,0,0,1,0,0,3,1],["山中","ジュニア","OP","2025/8/16","ニューヤング ①",4,2,0,0,0,0,1,1,0,0,0,0,0],["清水","ジュニア","OP","2025/8/16","ニューヤング ①",4,4,2,1,0,0,0,0,0,0,0,1,1],["山沖","ジュニア","OP","2025/8/16","ニューヤング ①",4,4,1,0,0,0,0,0,0,0,0,0,1],["西村","ジュニア","OP","2025/8/16","ニューヤング ①",4,4,1,0,0,0,0,0,0,0,1,0,0],["今村","ジュニア","OP","2025/8/16","ニューヤング ①",2,1,0,0,0,0,0,0,0,1,0,0,0],["宮下","ジュニア","OP","2025/8/16","ニューヤング ①",2,2,2,0,0,0,0,0,0,0,0,1,0],["山沖","ジュニア","OP","2025/8/16","ニューヤング ②",4,3,1,1,0,0,0,0,0,1,1,0,1],["宮下","ジュニア","OP","2025/8/16","ニューヤング ②",4,2,1,0,0,0,1,0,1,0,0,1,2],["前田","ジュニア","OP","2025/8/16","ニューヤング ②",4,3,2,0,1,0,0,0,1,0,0,2,1],["田之頭","ジュニア","OP","2025/8/16","ニューヤング ②",4,3,3,0,0,0,1,0,0,0,0,2,3],["三木","ジュニア","OP","2025/8/16","ニューヤング ②",4,3,1,0,0,0,1,0,0,0,0,0,0],["清水","ジュニア","OP","2025/8/16","ニューヤング ②",4,3,2,0,0,0,0,0,1,0,1,2,0],["田北","ジュニア","OP","2025/8/16","ニューヤング ②",4,3,1,0,0,0,0,0,0,1,0,1,0],["山中","ジュニア","OP","2025/8/16","ニューヤング ②",4,2,0,0,0,0,2,0,0,0,0,0,1],["今村","ジュニア","OP","2025/8/16","ニューヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["尾西","ジュニア","OP","2025/8/16","ニューヤング ②",1,0,0,0,0,0,0,1,0,0,0,0,0],["花井","ジュニア","OP","2025/8/16","ニューヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["三木","ジュニア","OP","2025/9/6","明日香ヤング ①",4,3,0,0,0,0,0,1,0,0,0,0,0],["山中","ジュニア","OP","2025/9/6","明日香ヤング ①",4,4,2,0,0,0,0,0,0,0,1,2,0],["田之頭","ジュニア","OP","2025/9/6","明日香ヤング ①",3,3,2,0,1,0,0,0,0,0,0,0,1],["前田","ジュニア","OP","2025/9/6","明日香ヤング ①",3,3,1,1,0,0,0,0,0,0,1,1,1],["清水","ジュニア","OP","2025/9/6","明日香ヤング ①",3,2,1,0,0,0,0,0,0,1,0,1,0],["宮下","ジュニア","OP","2025/9/6","明日香ヤング ①",2,2,0,0,0,0,0,0,0,0,2,0,0],["田代","ジュニア","OP","2025/9/6","明日香ヤング ①",3,2,1,0,0,0,1,0,0,0,0,1,0],["尾西","ジュニア","OP","2025/9/6","明日香ヤング ①",3,2,1,0,0,0,0,1,0,0,0,0,1],["西村","ジュニア","OP","2025/9/6","明日香ヤング ①",3,2,1,0,0,0,1,0,0,0,1,0,1],["金沢","ジュニア","OP","2025/9/6","明日香ヤング ①",1,1,0,0,0,0,0,0,0,0,1,0,0],["三木","ジュニア","OP","2025/9/6","明日香ヤング ②",4,3,1,1,0,0,0,0,1,0,1,2,2],["清水","ジュニア","OP","2025/9/6","明日香ヤング ②",4,2,0,0,0,0,1,0,0,1,1,1,2],["田之頭","ジュニア","OP","2025/9/6","明日香ヤング ②",4,4,3,1,1,0,0,0,0,0,0,2,2],["前田","ジュニア","OP","2025/9/6","明日香ヤング ②",4,2,1,0,0,1,2,0,0,0,1,2,2],["山中","ジュニア","OP","2025/9/6","明日香ヤング ②",4,2,1,0,0,0,2,0,0,0,0,1,1],["尾西","ジュニア","OP","2025/9/6","明日香ヤング ②",3,2,0,0,0,0,1,0,0,0,0,1,0],["宮下","ジュニア","OP","2025/9/6","明日香ヤング ②",3,3,2,0,0,0,0,0,0,0,0,1,0],["川中","ジュニア","OP","2025/9/6","明日香ヤング ②",3,3,1,0,0,0,0,0,0,0,1,0,0],["金沢","ジュニア","OP","2025/9/6","明日香ヤング ②",3,3,2,1,0,0,0,0,0,0,0,1,1],["山沖","ジュニア","OP","2025/9/21","忠岡ボーイズ",4,3,0,0,0,0,1,0,0,0,3,0,0],["三木","ジュニア","OP","2025/9/21","忠岡ボーイズ",4,3,1,1,0,0,1,0,0,0,0,0,0],["前田","ジュニア","OP","2025/9/21","忠岡ボーイズ",3,3,1,1,0,0,0,0,0,0,0,0,0],["田之頭","ジュニア","OP","2025/9/21","忠岡ボーイズ",3,3,2,0,0,0,0,0,0,0,0,0,0],["山中","ジュニア","OP","2025/9/21","忠岡ボーイズ",3,1,0,0,0,0,2,0,0,0,0,0,0],["小川","ジュニア","OP","2025/9/21","忠岡ボーイズ",3,2,1,0,0,0,1,0,0,0,1,0,0],["今村","ジュニア","OP","2025/9/21","忠岡ボーイズ",2,1,0,0,0,0,0,1,0,0,0,0,0],["武原","ジュニア","OP","2025/9/21","忠岡ボーイズ",1,1,0,0,0,0,0,0,0,0,1,0,0],["西村","ジュニア","OP","2025/9/21","忠岡ボーイズ",1,1,0,0,0,0,0,0,0,0,0,0,0],["安岡","ジュニア","OP","2025/9/21","忠岡ボーイズ",1,1,0,0,0,0,0,0,0,0,1,0,0],["石原","ジュニア","OP","2025/9/21","忠岡ボーイズ",1,1,0,0,0,0,0,0,0,0,1,0,0],["宮下","ジュニア","OP","2025/9/21","忠岡ボーイズ",1,0,0,0,0,0,1,0,0,0,0,0,0],["田代","ジュニア","OP","2025/9/21","忠岡ボーイズ",1,1,0,0,0,0,0,0,0,0,0,0,0],["北室","ジュニア","OP","2025/9/21","忠岡ボーイズ",1,1,0,0,0,0,0,0,0,0,1,0,0],["池田","レギュラー","OP","2025/7/19","打田タイガース",3,3,0,0,0,0,0,0,0,0,1,0,0],["櫻谷","レギュラー","OP","2025/7/19","打田タイガース",2,2,0,0,0,0,0,0,0,0,2,0,0],["田之頭","レギュラー","OP","2025/7/19","打田タイガース",1,1,0,0,0,0,0,0,0,0,0,0,0],["久保","レギュラー","OP","2025/7/19","打田タイガース",1,1,0,0,0,0,0,0,0,0,1,0,0],["前田","レギュラー","OP","2025/7/19","打田タイガース",2,2,1,1,0,0,0,0,0,0,1,1,0],["大園","レギュラー","OP","2025/7/19","打田タイガース",2,2,1,0,0,0,0,0,0,0,1,0,0],["藤","レギュラー","OP","2025/7/19","打田タイガース",2,2,0,0,0,0,0,0,0,0,2,0,0],["青木","レギュラー","OP","2025/7/19","打田タイガース",2,2,0,0,0,0,0,0,0,0,2,0,0],["三木","レギュラー","OP","2025/7/19","打田タイガース",0,0,0,0,0,0,0,0,0,0,0,0,0],["松尾","レギュラー","OP","2025/7/19","打田タイガース",1,1,0,0,0,0,0,0,0,0,1,0,0],["平見","レギュラー","OP","2025/7/19","打田タイガース",1,1,1,0,0,0,0,0,0,0,0,0,1],["山田","レギュラー","OP","2025/7/19","打田タイガース",1,1,0,0,0,0,0,0,0,0,1,0,0],["園崎","レギュラー","OP","2025/7/20","和歌山ホークス",4,4,2,0,0,0,0,0,0,0,0,0,1],["櫻谷","レギュラー","OP","2025/7/20","和歌山ホークス",3,3,0,0,0,0,0,0,0,0,0,0,0],["池田","レギュラー","OP","2025/7/20","和歌山ホークス",3,3,0,0,0,0,0,0,0,0,1,0,0],["前田","レギュラー","OP","2025/7/20","和歌山ホークス",3,3,2,1,0,1,0,0,0,0,0,3,2],["田之頭","レギュラー","OP","2025/7/20","和歌山ホークス",2,2,1,0,0,0,0,0,0,0,0,0,0],["田中","レギュラー","OP","2025/7/20","和歌山ホークス",3,3,2,1,0,0,0,0,0,0,0,1,0],["藤","レギュラー","OP","2025/7/20","和歌山ホークス",2,2,0,0,0,0,0,0,0,0,0,0,0],["小川","レギュラー","OP","2025/7/20","和歌山ホークス",2,2,1,0,0,0,0,0,0,0,0,0,0],["三木","レギュラー","OP","2025/7/20","和歌山ホークス",3,3,1,0,0,0,0,0,0,0,0,0,1],["松尾","レギュラー","OP","2025/7/20","和歌山ホークス",1,1,0,0,0,0,0,0,0,0,0,0,0],["久保","レギュラー","OP","2025/7/20","和歌山ホークス",1,1,0,0,0,0,0,0,0,0,1,0,0],["平見","レギュラー","OP","2025/7/20","和歌山ホークス",1,1,0,0,0,0,0,0,0,0,1,0,0],["木下","レギュラー","OP","2025/7/20","和歌山ホークス",1,1,0,0,0,0,0,0,0,0,0,0,0],["園崎","レギュラー","OP","2025/7/21","ニューヤング",4,4,1,0,0,0,0,0,0,0,0,0,0],["櫻谷","レギュラー","OP","2025/7/21","ニューヤング",4,3,1,0,0,0,1,0,0,0,0,0,1],["池田","レギュラー","OP","2025/7/21","ニューヤング",4,4,2,0,0,0,0,0,0,0,0,1,1],["前田","レギュラー","OP","2025/7/21","ニューヤング",4,4,2,1,0,0,0,0,0,0,0,1,1],["大園","レギュラー","OP","2025/7/21","ニューヤング",4,3,0,0,0,0,1,0,0,0,0,0,1],["久保","レギュラー","OP","2025/7/21","ニューヤング",3,3,0,0,0,0,0,0,0,0,1,0,0],["田之頭","レギュラー","OP","2025/7/21","ニューヤング",3,2,1,1,0,0,1,0,0,0,0,1,0],["藤","レギュラー","OP","2025/7/21","ニューヤング",3,3,0,0,0,0,0,0,0,0,0,0,0],["三木","レギュラー","OP","2025/7/21","ニューヤング",3,3,2,0,0,0,0,0,0,0,0,1,0],["園崎","レギュラー","OP","2025/8/1","京都ヤング",4,4,2,1,0,0,0,0,0,0,0,0,1],["櫻谷","レギュラー","OP","2025/8/1","京都ヤング",4,2,1,0,0,0,2,0,0,0,1,0,1],["池田","レギュラー","OP","2025/8/1","京都ヤング",4,2,0,0,0,0,1,0,1,0,0,1,0],["前田","レギュラー","OP","2025/8/1","京都ヤング",4,4,1,0,0,0,0,0,0,0,1,1,0],["田之頭","レギュラー","OP","2025/8/1","京都ヤング",3,3,0,0,0,0,0,0,0,0,0,0,0],["大園","レギュラー","OP","2025/8/1","京都ヤング",2,1,0,0,0,0,1,0,0,0,0,0,1],["田中","レギュラー","OP","2025/8/1","京都ヤング",3,3,2,1,0,0,0,0,0,0,0,1,1],["藤","レギュラー","OP","2025/8/1","京都ヤング",2,1,0,0,0,0,0,0,0,1,0,1,0],["三木","レギュラー","OP","2025/8/1","京都ヤング",3,3,1,1,0,0,0,0,0,0,1,0,0],["久保","レギュラー","OP","2025/8/1","京都ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["平見","レギュラー","OP","2025/8/1","京都ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["橋本","レギュラー","OP","2025/8/1","京都ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["園崎","レギュラー","公式","2025/8/1","京都ヤングフレンド・南紀ヤング",4,4,2,0,0,0,0,0,0,0,0,2,2],["櫻谷","レギュラー","公式","2025/8/1","京都ヤングフレンド・南紀ヤング",5,4,3,0,0,0,1,0,0,0,0,0,2],["池田","レギュラー","公式","2025/8/1","京都ヤングフレンド・南紀ヤング",4,3,3,0,0,0,0,1,0,0,0,0,2],["前田","レギュラー","公式","2025/8/1","京都ヤングフレンド・南紀ヤング",4,3,0,0,0,0,1,0,0,0,0,1,1],["田之頭","レギュラー","公式","2025/8/1","京都ヤングフレンド・南紀ヤング",3,3,2,1,0,0,0,0,0,0,0,3,1],["大園","レギュラー","公式","2025/8/1","京都ヤングフレンド・南紀ヤング",4,4,2,0,0,0,0,0,0,0,0,1,0],["田中","レギュラー","公式","2025/8/1","京都ヤングフレンド・南紀ヤング",2,2,0,0,0,0,0,0,0,0,0,0,0],["藤","レギュラー","公式","2025/8/1","京都ヤングフレンド・南紀ヤング",2,1,0,0,0,0,1,0,0,0,0,0,0],["三木","レギュラー","公式","2025/8/1","京都ヤングフレンド・南紀ヤング",3,3,2,0,0,0,0,0,0,0,0,0,2],["清水","レギュラー","公式","2025/8/1","京都ヤングフレンド・南紀ヤング",1,1,0,0,0,0,0,0,0,0,0,1,0],["久保","レギュラー","公式","2025/8/1","京都ヤングフレンド・南紀ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["松尾","レギュラー","公式","2025/8/1","京都ヤングフレンド・南紀ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["園崎","レギュラー","公式","2025/8/2","狭山ヤング",4,3,2,0,0,0,1,0,0,0,0,2,2],["櫻谷","レギュラー","公式","2025/8/2","狭山ヤング",4,3,2,1,0,0,0,0,1,0,0,1,1],["池田","レギュラー","公式","2025/8/2","狭山ヤング",4,3,0,0,0,0,0,0,1,0,0,1,0],["前田","レギュラー","公式","2025/8/2","狭山ヤング",4,4,1,1,0,0,0,0,0,0,0,1,0],["田之頭","レギュラー","公式","2025/8/2","狭山ヤング",3,3,1,0,0,0,0,0,0,0,0,0,0],["久保","レギュラー","公式","2025/8/2","狭山ヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["大園","レギュラー","公式","2025/8/2","狭山ヤング",3,3,0,0,0,0,0,0,0,0,1,0,0],["青木","レギュラー","公式","2025/8/2","狭山ヤング",3,3,1,0,0,0,0,0,0,0,1,0,1],["三木","レギュラー","公式","2025/8/2","狭山ヤング",3,2,1,1,0,0,1,0,0,0,0,0,2],["木下","レギュラー","公式","2025/8/2","狭山ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["池田","レギュラー","公式","2025/9/19","西尾張ヤング",4,3,0,0,0,0,1,0,0,0,0,0,0],["櫻谷","レギュラー","公式","2025/9/19","西尾張ヤング",4,4,1,1,0,0,0,0,0,0,0,0,2],["園崎","レギュラー","公式","2025/9/19","西尾張ヤング",3,3,2,1,1,0,0,0,0,0,1,2,1],["田中","レギュラー","公式","2025/9/19","西尾張ヤング",3,3,2,0,0,0,0,0,0,0,0,1,0],["久保","レギュラー","公式","2025/9/19","西尾張ヤング",2,2,0,0,0,0,0,0,0,0,2,0,0],["三木","レギュラー","公式","2025/9/19","西尾張ヤング",3,3,1,0,0,0,0,0,0,0,2,0,0],["松尾","レギュラー","公式","2025/9/19","西尾張ヤング",2,2,0,0,0,0,0,0,0,0,0,0,0],["青木","レギュラー","公式","2025/9/19","西尾張ヤング",3,2,1,0,1,0,1,0,0,0,0,0,1],["大園","レギュラー","公式","2025/9/19","西尾張ヤング",2,2,0,0,0,0,0,0,0,0,0,1,0],["平見","レギュラー","公式","2025/9/19","西尾張ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["田之頭","レギュラー","公式","2025/9/19","西尾張ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["山田","レギュラー","公式","2025/9/19","西尾張ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["池田","レギュラー","OP","2025/9/13","京相楽ヤング",3,2,0,0,0,0,1,0,0,0,0,0,0],["櫻谷","レギュラー","OP","2025/9/13","京相楽ヤング",3,2,0,0,0,0,0,1,0,0,0,0,0],["園崎","レギュラー","OP","2025/9/13","京相楽ヤング",3,3,0,0,0,0,0,0,0,0,1,0,0],["前田","レギュラー","OP","2025/9/13","京相楽ヤング",3,3,0,0,0,0,0,0,0,0,2,0,0],["田中","レギュラー","OP","2025/9/13","京相楽ヤング",3,3,0,0,0,0,0,0,0,0,0,0,0],["田之頭","レギュラー","OP","2025/9/13","京相楽ヤング",1,1,1,0,0,0,0,0,0,0,0,0,0],["平見","レギュラー","OP","2025/9/13","京相楽ヤング",2,2,0,0,0,0,0,0,0,0,0,0,0],["青木","レギュラー","OP","2025/9/13","京相楽ヤング",2,1,0,0,0,0,0,1,0,0,0,0,0],["大園","レギュラー","OP","2025/9/13","京相楽ヤング",2,2,0,0,0,0,0,0,0,0,0,0,0],["三木","レギュラー","OP","2025/9/13","京相楽ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["久保","レギュラー","OP","2025/9/13","京相楽ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["木下","レギュラー","OP","2025/2/15","明日香ヤング",4,4,2,0,0,0,0,0,0,0,2,0,1],["小川","レギュラー","OP","2025/2/15","明日香ヤング",4,4,2,0,1,0,0,0,0,0,0,1,0],["三木","レギュラー","OP","2025/2/15","明日香ヤング",4,3,1,0,0,0,1,0,0,0,0,0,1],["久保","レギュラー","OP","2025/2/15","明日香ヤング",4,4,1,0,1,0,0,0,0,0,2,1,0],["前田","レギュラー","OP","2025/2/15","明日香ヤング",3,3,0,0,0,0,0,0,0,0,0,0,1],["櫻谷","レギュラー","OP","2025/2/15","明日香ヤング",3,3,1,0,0,0,0,0,0,0,0,0,1],["青木","レギュラー","OP","2025/2/15","明日香ヤング",3,2,1,0,0,0,1,0,0,0,0,0,0],["田中","レギュラー","OP","2025/2/15","明日香ヤング",2,2,0,0,0,0,0,0,0,0,2,0,0],["藤","レギュラー","OP","2025/2/15","明日香ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["池田","レギュラー","OP","2025/2/15","明日香ヤング",2,2,1,0,1,0,0,0,0,0,0,2,0],["松尾","レギュラー","OP","2025/2/15","明日香ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["櫻谷","レギュラー","OP","2025/2/22","京都ヤング ①",4,3,1,0,1,0,0,1,0,0,1,2,1],["池田","レギュラー","OP","2025/2/22","京都ヤング ①",4,4,2,0,0,1,0,0,0,0,1,1,1],["園崎","レギュラー","OP","2025/2/22","京都ヤング ①",4,3,1,0,0,0,0,1,0,0,0,0,1],["久保","レギュラー","OP","2025/2/22","京都ヤング ①",4,3,1,0,1,0,0,1,0,0,2,1,1],["三木","レギュラー","OP","2025/2/22","京都ヤング ①",4,2,0,0,0,0,0,2,0,0,1,0,1],["青木","レギュラー","OP","2025/2/22","京都ヤング ①",4,4,1,0,0,0,0,0,0,0,1,0,1],["田中","レギュラー","OP","2025/2/22","京都ヤング ①",1,1,0,0,0,0,0,0,0,0,0,0,0],["前田","レギュラー","OP","2025/2/22","京都ヤング ①",4,4,0,0,0,0,0,0,0,0,0,1,1],["藤","レギュラー","OP","2025/2/22","京都ヤング ①",2,2,0,0,0,0,0,0,0,0,1,0,0],["山田","レギュラー","OP","2025/2/22","京都ヤング ①",1,1,0,0,0,0,0,0,0,0,0,0,0],["松尾","レギュラー","OP","2025/2/22","京都ヤング ①",2,2,2,0,0,0,0,0,0,0,0,1,1],["平見","レギュラー","OP","2025/2/22","京都ヤング ①",1,1,0,0,0,0,0,0,0,0,0,1,0],["池田","レギュラー","OP","2025/2/22","京都ヤング ②",3,2,1,0,0,0,1,0,0,0,0,0,1],["松尾","レギュラー","OP","2025/2/22","京都ヤング ②",4,3,0,0,0,0,1,0,0,0,1,0,1],["園崎","レギュラー","OP","2025/2/22","京都ヤング ②",3,3,0,0,0,0,0,0,0,0,0,1,1],["田中","レギュラー","OP","2025/2/22","京都ヤング ②",3,3,1,1,0,0,0,0,0,0,0,3,0],["櫻谷","レギュラー","OP","2025/2/22","京都ヤング ②",3,3,0,0,0,0,0,0,0,0,0,0,0],["藤","レギュラー","OP","2025/2/22","京都ヤング ②",3,2,0,0,0,0,0,1,0,0,1,0,0],["平見","レギュラー","OP","2025/2/22","京都ヤング ②",2,2,0,0,0,0,0,0,0,0,2,0,0],["清水","レギュラー","OP","2025/2/22","京都ヤング ②",2,2,0,0,0,0,0,0,0,0,0,0,0],["小川","レギュラー","OP","2025/2/22","京都ヤング ②",2,2,1,0,0,0,0,0,0,0,0,0,1],["山田","レギュラー","OP","2025/2/22","京都ヤング ②",1,0,0,0,0,0,1,0,0,0,0,0,0],["久保","レギュラー","OP","2025/2/22","京都ヤング ②",1,1,0,0,0,0,0,0,0,0,1,0,0],["山中","レギュラー","OP","2025/2/22","京都ヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["前田","レギュラー","OP","2025/2/22","京都ヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["三木","レギュラー","OP","2025/2/23","和歌山ホークスヤング ①",3,3,0,0,0,0,0,0,0,0,1,0,0],["池田","レギュラー","OP","2025/2/23","和歌山ホークスヤング ①",3,2,0,0,0,0,1,0,0,0,1,0,0],["櫻谷","レギュラー","OP","2025/2/23","和歌山ホークスヤング ①",3,3,1,0,0,0,0,0,0,0,1,0,1],["久保","レギュラー","OP","2025/2/23","和歌山ホークスヤング ①",3,3,1,1,0,0,0,0,0,0,1,0,0],["田中","レギュラー","OP","2025/2/23","和歌山ホークスヤング ①",3,2,0,0,0,0,1,0,0,0,0,0,0],["園崎","レギュラー","OP","2025/2/23","和歌山ホークスヤング ①",2,2,1,0,0,0,0,0,0,0,1,0,0],["青木","レギュラー","OP","2025/2/23","和歌山ホークスヤング ①",2,2,0,0,0,0,0,0,0,0,2,0,0],["前田","レギュラー","OP","2025/2/23","和歌山ホークスヤング ①",3,3,1,1,0,0,0,0,0,0,0,0,0],["藤","レギュラー","OP","2025/2/23","和歌山ホークスヤング ①",2,2,1,0,0,0,0,0,0,0,0,0,0],["松尾","レギュラー","OP","2025/2/23","和歌山ホークスヤング ①",1,1,0,0,0,0,0,0,0,0,1,0,0],["平見","レギュラー","OP","2025/2/23","和歌山ホークスヤング ①",1,1,0,0,0,0,0,0,0,0,0,0,0],["櫻谷","レギュラー","OP","2025/2/23","和歌山ホークスヤング ②",4,4,2,0,0,0,0,0,0,0,0,0,0],["園崎","レギュラー","OP","2025/2/23","和歌山ホークスヤング ②",3,2,1,0,0,0,1,0,0,0,1,0,1],["池田","レギュラー","OP","2025/2/23","和歌山ホークスヤング ②",4,4,2,0,0,0,0,0,0,0,1,1,2],["久保","レギュラー","OP","2025/2/23","和歌山ホークスヤング ②",4,4,1,1,0,0,0,0,0,0,2,1,1],["青木","レギュラー","OP","2025/2/23","和歌山ホークスヤング ②",4,2,1,1,0,0,2,0,0,0,0,1,1],["藤","レギュラー","OP","2025/2/23","和歌山ホークスヤング ②",3,1,0,0,0,0,2,0,0,0,1,1,1],["松尾","レギュラー","OP","2025/2/23","和歌山ホークスヤング ②",3,3,1,1,0,0,0,0,0,0,1,3,0],["平見","レギュラー","OP","2025/2/23","和歌山ホークスヤング ②",2,2,0,0,0,0,0,0,0,0,1,0,0],["清水","レギュラー","OP","2025/2/23","和歌山ホークスヤング ②",3,1,0,0,0,0,2,0,0,0,0,0,1],["田之頭","レギュラー","OP","2025/2/23","和歌山ホークスヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["山田","レギュラー","OP","2025/2/23","和歌山ホークスヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["池田","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ①",4,4,1,0,0,0,0,0,0,0,1,0,0],["園崎","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ①",3,3,2,1,0,0,0,0,0,0,1,1,1],["櫻谷","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ①",2,2,0,0,0,0,0,0,0,0,1,0,0],["久保","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ①",3,3,2,1,0,0,0,0,0,0,1,1,0],["田中","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ①",3,3,1,0,0,0,0,0,0,0,2,0,0],["三木","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ①",3,3,0,0,0,0,0,0,0,0,1,0,0],["青木","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ①",3,3,0,0,0,0,0,0,0,0,1,0,0],["前田","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ①",3,3,2,1,0,0,0,0,0,0,1,0,1],["松尾","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ①",1,1,0,0,0,0,0,0,0,0,0,0,0],["山中","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ①",1,1,0,0,0,0,0,0,0,0,1,0,0],["木下","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ①",1,1,0,0,0,0,0,0,0,0,1,0,0],["山田","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ①",1,1,0,0,0,0,0,0,0,0,1,0,0],["木下","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ②",2,2,0,0,0,0,0,0,0,0,0,0,0],["園崎","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ②",2,2,0,0,0,0,0,0,0,0,0,0,0],["櫻谷","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ②",2,2,1,0,0,0,0,0,0,0,1,0,0],["田中","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ②",2,2,0,0,0,0,0,0,0,0,1,0,0],["山田","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["前田","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ②",1,1,1,1,0,0,0,0,0,0,0,0,0],["藤","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ②",2,2,1,1,0,0,0,0,0,0,0,0,0],["松尾","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ②",2,2,0,0,0,0,0,0,0,0,1,0,0],["小川","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ②",2,2,0,0,0,0,0,0,0,0,1,0,0],["池田","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["三木","レギュラー","OP","2025/2/28","ヤング神戸須磨クラブ ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["池田","レギュラー","OP","2025/3/15","泉大津ヤング",3,2,2,0,1,0,0,1,0,0,0,0,1],["三木","レギュラー","OP","2025/3/15","泉大津ヤング",3,3,0,0,0,0,0,0,0,0,0,1,1],["園崎","レギュラー","OP","2025/3/15","泉大津ヤング",3,3,1,0,0,0,0,0,0,0,0,0,1],["久保","レギュラー","OP","2025/3/15","泉大津ヤング",3,2,0,0,0,0,1,0,0,0,1,1,0],["田中","レギュラー","OP","2025/3/15","泉大津ヤング",3,3,0,0,0,0,0,0,0,0,2,0,0],["前田","レギュラー","OP","2025/3/15","泉大津ヤング",2,2,1,0,0,0,0,0,0,0,0,1,0],["青木","レギュラー","OP","2025/3/15","泉大津ヤング",2,1,0,0,0,0,1,0,0,0,1,0,0],["櫻谷","レギュラー","OP","2025/3/15","泉大津ヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["藤","レギュラー","OP","2025/3/15","泉大津ヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["池田","レギュラー","OP","2025/3/15","RBAヤング",4,3,2,0,0,0,1,0,0,0,0,0,1],["田之頭","レギュラー","OP","2025/3/15","RBAヤング",4,1,1,0,0,0,2,0,1,0,0,2,1],["三木","レギュラー","OP","2025/3/15","RBAヤング",3,3,0,0,0,0,0,0,0,0,0,0,0],["園崎","レギュラー","OP","2025/3/15","RBAヤング",4,4,2,1,0,0,0,0,0,0,0,0,2],["田中","レギュラー","OP","2025/3/15","RBAヤング",2,2,0,0,0,0,0,0,0,0,0,0,0],["前田","レギュラー","OP","2025/3/15","RBAヤング",3,2,2,1,0,0,1,0,0,0,0,2,1],["櫻谷","レギュラー","OP","2025/3/15","RBAヤング",3,2,1,0,1,0,1,0,0,0,0,3,1],["青木","レギュラー","OP","2025/3/15","RBAヤング",4,4,1,0,0,0,0,0,0,0,0,1,0],["木下","レギュラー","OP","2025/3/15","RBAヤング",4,4,1,0,0,0,0,0,0,0,1,0,1],["橋本","レギュラー","OP","2025/3/15","RBAヤング",1,0,0,0,0,0,1,0,0,0,0,0,1],["山田","レギュラー","OP","2025/3/15","RBAヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["平見","レギュラー","OP","2025/3/15","RBAヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["久保","レギュラー","OP","2025/3/15","RBAヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["山中","レギュラー","OP","2025/3/15","RBAヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["池田","レギュラー","OP","2025/3/20","舞洲ヤング ①",4,3,1,0,0,0,1,0,0,0,2,0,1],["田之頭","レギュラー","OP","2025/3/20","舞洲ヤング ①",3,2,0,0,0,0,0,0,1,0,0,0,0],["櫻谷","レギュラー","OP","2025/3/20","舞洲ヤング ①",4,4,2,1,0,0,0,0,0,0,2,2,2],["園崎","レギュラー","OP","2025/3/20","舞洲ヤング ①",4,4,2,2,0,0,0,0,0,0,0,2,0],["前田","レギュラー","OP","2025/3/20","舞洲ヤング ①",3,2,1,0,0,0,1,0,0,0,0,0,0],["三木","レギュラー","OP","2025/3/20","舞洲ヤング ①",3,3,2,0,0,0,0,0,0,0,0,0,0],["青木","レギュラー","OP","2025/3/20","舞洲ヤング ①",3,3,0,0,0,0,0,0,0,0,1,0,0],["藤","レギュラー","OP","2025/3/20","舞洲ヤング ①",3,3,1,0,1,0,0,0,0,0,0,0,0],["木下","レギュラー","OP","2025/3/20","舞洲ヤング ①",3,3,2,1,0,0,0,0,0,0,0,0,1],["田中","レギュラー","OP","2025/3/20","舞洲ヤング ①",1,1,0,0,0,0,0,0,0,0,1,0,0],["木下","レギュラー","OP","2025/3/20","舞洲ヤング ②",2,2,2,0,0,0,0,0,0,0,0,0,0],["松尾","レギュラー","OP","2025/3/20","舞洲ヤング ②",2,1,1,0,0,0,0,0,0,1,0,0,0],["櫻谷","レギュラー","OP","2025/3/20","舞洲ヤング ②",3,2,0,0,0,0,1,0,0,0,1,0,0],["園崎","レギュラー","OP","2025/3/20","舞洲ヤング ②",3,3,1,1,0,0,0,0,0,0,1,0,0],["久保","レギュラー","OP","2025/3/20","舞洲ヤング ②",3,3,0,0,0,0,0,0,0,0,2,0,0],["藤","レギュラー","OP","2025/3/20","舞洲ヤング ②",3,2,0,0,0,0,0,1,0,0,1,0,0],["青木","レギュラー","OP","2025/3/20","舞洲ヤング ②",3,3,1,0,0,0,0,0,0,0,1,0,0],["清水","レギュラー","OP","2025/3/20","舞洲ヤング ②",2,2,0,0,0,0,0,0,0,0,0,0,0],["小川","レギュラー","OP","2025/3/20","舞洲ヤング ②",2,2,1,0,0,0,0,0,0,0,0,0,0],["山田","レギュラー","OP","2025/3/20","舞洲ヤング ②",1,0,0,0,0,0,1,0,0,0,0,0,0],["平見","レギュラー","OP","2025/3/20","舞洲ヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["田中","レギュラー","OP","2025/3/20","舞洲ヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["池田","レギュラー","OP","2025/3/21","ヤングオール神戸 ①",4,3,3,0,0,0,1,0,0,0,0,1,2],["田之頭","レギュラー","OP","2025/3/21","ヤングオール神戸 ①",4,3,1,1,0,0,1,0,0,0,0,2,0],["櫻谷","レギュラー","OP","2025/3/21","ヤングオール神戸 ①",4,2,1,0,0,0,1,1,0,0,0,1,0],["園崎","レギュラー","OP","2025/3/21","ヤングオール神戸 ①",4,3,1,1,0,0,1,0,0,0,2,1,0],["前田","レギュラー","OP","2025/3/21","ヤングオール神戸 ①",4,3,1,0,0,0,1,0,0,0,1,0,0],["三木","レギュラー","OP","2025/3/21","ヤングオール神戸 ①",4,4,1,0,0,0,0,0,0,0,0,0,0],["青木","レギュラー","OP","2025/3/21","ヤングオール神戸 ①",4,4,1,0,0,0,0,0,0,0,1,0,1],["藤","レギュラー","OP","2025/3/21","ヤングオール神戸 ①",3,2,0,0,0,0,1,0,0,0,0,0,1],["木下","レギュラー","OP","2025/3/21","ヤングオール神戸 ①",3,1,0,0,0,0,2,0,0,0,1,0,1],["大園","レギュラー","OP","2025/3/21","ヤングオール神戸 ①",1,1,0,0,0,0,0,0,0,0,0,0,0],["大園","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",5,5,3,0,0,0,0,0,0,0,0,1,0],["松尾","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",2,2,0,0,0,0,0,0,0,0,0,0,0],["櫻谷","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",4,3,1,1,0,0,1,0,0,0,0,0,2],["園崎","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",4,3,2,1,0,0,0,1,0,0,0,2,1],["青木","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",4,3,0,0,0,0,1,0,0,0,0,0,1],["久保","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",3,3,0,0,0,0,0,0,0,0,1,0,1],["田中","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",4,3,0,0,0,0,1,0,0,0,0,1,1],["清水","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",2,2,0,0,0,0,0,0,0,0,1,0,0],["橋本","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",2,2,1,0,0,0,0,0,0,0,1,0,0],["平見","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",3,2,0,0,0,0,0,1,0,0,1,0,0],["山田","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",1,0,0,0,0,0,1,0,0,0,0,0,0],["藤","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",2,2,2,1,0,0,0,0,0,0,0,3,0],["三木","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",1,0,0,0,0,0,1,0,0,0,0,0,1],["小川","レギュラー","OP","2025/3/21","ヤングオール神戸 ②",1,0,0,0,0,0,1,0,0,0,0,0,1],["池田","レギュラー","OP","2025/3/29","ナガセボーイズ",4,4,0,0,0,0,0,0,0,0,0,0,0],["田之頭","レギュラー","OP","2025/3/29","ナガセボーイズ",3,3,3,1,0,0,0,0,0,0,0,0,1],["櫻谷","レギュラー","OP","2025/3/29","ナガセボーイズ",4,4,0,0,0,0,0,0,0,0,0,0,0],["園崎","レギュラー","OP","2025/3/29","ナガセボーイズ",3,3,2,1,0,0,0,0,0,0,1,0,0],["前田","レギュラー","OP","2025/3/29","ナガセボーイズ",3,3,0,0,0,0,0,0,0,0,1,1,0],["三木","レギュラー","OP","2025/3/29","ナガセボーイズ",2,2,1,0,0,0,0,0,0,0,0,0,1],["青木","レギュラー","OP","2025/3/29","ナガセボーイズ",3,2,1,1,0,0,1,0,0,0,1,1,1],["藤","レギュラー","OP","2025/3/29","ナガセボーイズ",3,3,1,0,0,0,0,0,0,0,0,1,0],["木下","レギュラー","OP","2025/3/29","ナガセボーイズ",2,1,0,0,0,0,1,0,0,0,0,0,0],["久保","レギュラー","OP","2025/3/29","ナガセボーイズ",1,1,0,0,0,0,0,0,0,0,1,0,0],["大園","レギュラー","OP","2025/3/29","ナガセボーイズ",1,1,0,0,0,0,0,0,0,0,0,0,0],["松尾","レギュラー","OP","2025/3/29","ナガセボーイズ",1,1,0,0,0,0,0,0,0,0,0,0,0],["池田","レギュラー","OP","2025/4/5","河内長野ヤング",4,4,2,1,0,0,0,0,0,0,0,3,0],["田之頭","レギュラー","OP","2025/4/5","河内長野ヤング",5,4,1,0,0,0,0,1,0,0,0,0,1],["櫻谷","レギュラー","OP","2025/4/5","河内長野ヤング",5,2,1,0,1,0,1,2,0,0,0,0,2],["園崎","レギュラー","OP","2025/4/5","河内長野ヤング",5,3,2,0,0,0,2,0,0,0,0,2,1],["前田","レギュラー","OP","2025/4/5","河内長野ヤング",4,3,0,0,0,0,1,0,0,0,0,0,1],["三木","レギュラー","OP","2025/4/5","河内長野ヤング",4,2,2,0,0,0,2,0,0,0,0,0,2],["大園","レギュラー","OP","2025/4/5","河内長野ヤング",4,4,4,0,0,0,0,0,0,0,0,3,3],["藤","レギュラー","OP","2025/4/5","河内長野ヤング",1,1,1,0,0,0,0,0,0,0,0,2,1],["木下","レギュラー","OP","2025/4/5","河内長野ヤング",3,3,0,0,0,0,0,0,0,0,1,0,0],["田中","レギュラー","OP","2025/4/5","河内長野ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["平見","レギュラー","OP","2025/4/5","河内長野ヤング",1,0,0,0,0,0,1,0,0,0,0,0,0],["山沖","レギュラー","OP","2025/4/5","河内長野ヤング",0,0,0,0,0,0,0,0,0,0,0,0,0],["青木","レギュラー","OP","2025/4/5","河内長野ヤング",1,0,0,0,0,0,1,0,0,0,0,0,0],["松尾","レギュラー","OP","2025/4/5","河内長野ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["山中","レギュラー","OP","2025/4/5","河内長野ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["清水","レギュラー","OP","2025/4/5","河内長野ヤング",1,0,0,0,0,0,1,0,0,0,0,1,0],["小川","レギュラー","OP","2025/4/5","河内長野ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["池田","レギュラー","公式","2025/4/11","東大阪BBCヤング",4,3,1,0,0,0,1,0,0,0,0,0,2],["田之頭","レギュラー","公式","2025/4/11","東大阪BBCヤング",4,4,2,0,0,0,0,0,0,0,0,0,1],["櫻谷","レギュラー","公式","2025/4/11","東大阪BBCヤング",4,3,1,0,0,0,1,0,0,0,0,0,3],["園崎","レギュラー","公式","2025/4/11","東大阪BBCヤング",4,3,3,1,0,0,1,0,0,0,0,3,2],["前田","レギュラー","公式","2025/4/11","東大阪BBCヤング",4,4,2,1,0,0,0,0,0,0,0,4,1],["三木","レギュラー","公式","2025/4/11","東大阪BBCヤング",3,2,2,1,0,0,1,0,0,0,0,0,1],["大園","レギュラー","公式","2025/4/11","東大阪BBCヤング",3,1,0,0,0,0,1,0,1,0,0,2,0],["藤","レギュラー","公式","2025/4/11","東大阪BBCヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["木下","レギュラー","公式","2025/4/11","東大阪BBCヤング",3,3,0,0,0,0,0,0,0,0,0,0,0],["田中","レギュラー","公式","2025/4/11","東大阪BBCヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["青木","レギュラー","公式","2025/4/11","東大阪BBCヤング",1,0,0,0,0,0,1,0,0,0,0,1,0],["池田","レギュラー","公式","2025/4/18","貝塚ヤング",4,3,1,0,0,0,1,0,0,0,0,1,1],["田之頭","レギュラー","公式","2025/4/18","貝塚ヤング",4,3,1,0,0,0,0,0,1,0,0,1,1],["櫻谷","レギュラー","公式","2025/4/18","貝塚ヤング",4,4,0,0,0,0,0,0,0,0,1,0,0],["園崎","レギュラー","公式","2025/4/18","貝塚ヤング",4,4,0,0,0,0,0,0,0,0,0,0,0],["前田","レギュラー","公式","2025/4/18","貝塚ヤング",3,3,2,1,0,0,0,0,0,0,0,2,0],["三木","レギュラー","公式","2025/4/18","貝塚ヤング",3,3,0,0,0,0,0,0,0,0,0,0,0],["大園","レギュラー","公式","2025/4/18","貝塚ヤング",3,3,2,0,0,0,0,0,0,0,0,0,0],["藤","レギュラー","公式","2025/4/18","貝塚ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["木下","レギュラー","公式","2025/4/18","貝塚ヤング",2,2,0,0,0,0,0,0,0,0,0,0,1],["山田","レギュラー","公式","2025/4/18","貝塚ヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["青木","レギュラー","公式","2025/4/18","貝塚ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["田中","レギュラー","公式","2025/4/18","貝塚ヤング",1,0,0,0,0,0,1,0,0,0,0,0,1],["池田","レギュラー","公式","2025/4/29","大阪畷ヤング",4,3,1,0,0,0,1,0,0,0,0,1,1],["三木","レギュラー","公式","2025/4/29","大阪畷ヤング",4,3,2,0,0,1,1,0,0,0,0,4,2],["田之頭","レギュラー","公式","2025/4/29","大阪畷ヤング",4,3,0,0,0,0,1,0,0,0,0,0,0],["園崎","レギュラー","公式","2025/4/29","大阪畷ヤング",3,3,2,2,0,0,0,0,0,0,1,1,1],["大園","レギュラー","公式","2025/4/29","大阪畷ヤング",3,2,0,0,0,0,1,0,0,0,0,0,0],["櫻谷","レギュラー","公式","2025/4/29","大阪畷ヤング",3,3,1,0,0,0,0,0,0,0,0,1,0],["木下","レギュラー","公式","2025/4/29","大阪畷ヤング",3,3,0,0,0,0,0,0,0,0,0,0,1],["藤","レギュラー","公式","2025/4/29","大阪畷ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["清水","レギュラー","公式","2025/4/29","大阪畷ヤング",3,2,0,0,0,0,1,0,0,0,1,0,1],["山中","レギュラー","公式","2025/4/29","大阪畷ヤング",1,0,0,0,0,0,1,0,0,0,0,0,0],["青木","レギュラー","公式","2025/4/29","大阪畷ヤング",1,0,0,0,0,0,1,0,0,0,0,0,1],["櫻谷","レギュラー","公式","2025/5/2","北九州ヤング",3,3,0,0,0,0,0,0,0,0,0,0,0],["松尾","レギュラー","公式","2025/5/2","北九州ヤング",3,3,0,0,0,0,0,0,0,0,1,0,0],["池田","レギュラー","公式","2025/5/2","北九州ヤング",3,3,1,0,0,0,0,0,0,0,0,0,1],["園崎","レギュラー","公式","2025/5/2","北九州ヤング",3,3,1,0,0,0,0,0,0,0,0,1,0],["田中","レギュラー","公式","2025/5/2","北九州ヤング",3,1,0,0,0,0,2,0,0,0,0,0,0],["平見","レギュラー","公式","2025/5/2","北九州ヤング",3,3,0,0,0,0,0,0,0,0,0,0,0],["清水","レギュラー","公式","2025/5/2","北九州ヤング",2,2,0,0,0,0,0,0,0,0,0,0,0],["大園","レギュラー","公式","2025/5/2","北九州ヤング",2,1,0,0,0,0,1,0,0,0,0,0,0],["橋本","レギュラー","公式","2025/5/2","北九州ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["藤","レギュラー","公式","2025/5/2","北九州ヤング",2,1,1,0,0,0,0,1,0,0,0,0,0],["前田","レギュラー","公式","2025/5/2","北九州ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["田之頭","レギュラー","公式","2025/5/2","北九州ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["三木","レギュラー","公式","2025/5/2","北九州ヤング",1,1,1,0,0,0,0,0,0,0,0,0,0],["青木","レギュラー","公式","2025/5/2","北九州ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["池田","レギュラー","公式","2025/5/9","球道ヤング",4,4,0,0,0,0,0,0,0,0,1,0,0],["三木","レギュラー","公式","2025/5/9","球道ヤング",4,3,0,0,0,0,0,1,0,0,2,0,1],["田之頭","レギュラー","公式","2025/5/9","球道ヤング",4,4,3,0,0,0,0,0,0,0,0,0,2],["園崎","レギュラー","公式","2025/5/9","球道ヤング",4,4,2,0,0,0,0,0,0,0,0,0,1],["前田","レギュラー","公式","2025/5/9","球道ヤング",4,4,3,2,0,0,0,0,0,0,1,3,2],["大園","レギュラー","公式","2025/5/9","球道ヤング",5,4,1,0,1,0,1,0,0,0,0,1,1],["山中","レギュラー","公式","2025/5/9","球道ヤング",3,3,2,0,0,0,0,0,0,0,1,1,0],["藤","レギュラー","公式","2025/5/9","球道ヤング",2,1,1,0,0,0,0,0,0,1,0,0,0],["櫻谷","レギュラー","公式","2025/5/9","球道ヤング",4,4,0,0,0,0,0,0,0,0,1,0,0],["宮下","レギュラー","公式","2025/5/9","球道ヤング",2,1,0,0,0,0,0,0,0,1,1,0,0],["木下","レギュラー","公式","2025/5/9","球道ヤング",1,1,1,0,0,0,0,0,0,0,0,2,0],["池田","レギュラー","公式","2025/5/16","RBAヤング",4,3,0,0,0,0,1,0,0,0,1,1,1],["三木","レギュラー","公式","2025/5/16","RBAヤング",4,4,1,1,0,0,0,0,0,0,0,1,1],["田之頭","レギュラー","公式","2025/5/16","RBAヤング",4,4,2,0,0,0,0,0,0,0,1,2,0],["園崎","レギュラー","公式","2025/5/16","RBAヤング",4,4,0,0,0,0,0,0,0,0,0,0,1],["前田","レギュラー","公式","2025/5/16","RBAヤング",4,4,1,0,0,0,0,0,0,0,1,1,0],["大園","レギュラー","公式","2025/5/16","RBAヤング",3,3,1,1,0,0,0,0,0,0,1,0,0],["山中","レギュラー","公式","2025/5/16","RBAヤング",2,2,1,0,0,0,0,0,0,0,0,0,0],["藤","レギュラー","公式","2025/5/16","RBAヤング",3,3,1,0,0,0,0,0,0,0,0,0,1],["櫻谷","レギュラー","公式","2025/5/16","RBAヤング",3,2,0,0,0,0,0,1,0,0,0,0,2],["青木","レギュラー","公式","2025/5/16","RBAヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["池田","レギュラー","OP","2025/5/23","ニューヤング",4,3,0,0,0,0,0,1,0,0,0,1,0],["櫻谷","レギュラー","OP","2025/5/23","ニューヤング",3,2,1,0,0,0,0,1,0,0,0,0,0],["藤","レギュラー","OP","2025/5/23","ニューヤング",3,3,0,0,0,0,0,0,0,0,0,0,0],["園崎","レギュラー","OP","2025/5/23","ニューヤング",3,3,1,0,1,0,0,0,0,0,0,0,1],["田中","レギュラー","OP","2025/5/23","ニューヤング",3,2,0,0,0,0,0,0,1,0,0,1,0],["大園","レギュラー","OP","2025/5/23","ニューヤング",3,3,0,0,0,0,0,0,0,0,0,0,0],["青木","レギュラー","OP","2025/5/23","ニューヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["松尾","レギュラー","OP","2025/5/23","ニューヤング",2,2,0,0,0,0,0,0,0,0,0,0,0],["清水","レギュラー","OP","2025/5/23","ニューヤング",2,2,1,0,0,0,0,0,0,0,0,0,1],["平見","レギュラー","OP","2025/5/23","ニューヤング",1,1,1,1,0,0,0,0,0,0,0,0,0],["前田","レギュラー","OP","2025/5/23","ニューヤング",1,1,1,0,0,0,0,0,0,0,0,0,0],["三木","レギュラー","OP","2025/5/23","ニューヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["池田","レギュラー","OP","2025/7/4","ヤングオール神戸",5,5,1,1,0,0,0,0,0,0,2,0,1],["櫻谷","レギュラー","OP","2025/7/4","ヤングオール神戸",5,4,3,0,1,0,1,0,0,0,0,0,3],["田之頭","レギュラー","OP","2025/7/4","ヤングオール神戸",3,3,1,0,0,0,0,0,0,0,0,1,0],["園崎","レギュラー","OP","2025/7/4","ヤングオール神戸",4,4,2,1,0,0,0,0,0,0,0,1,2],["前田","レギュラー","OP","2025/7/4","ヤングオール神戸",4,4,1,1,0,0,0,0,0,0,1,2,2],["大園","レギュラー","OP","2025/7/4","ヤングオール神戸",4,3,2,0,0,0,1,0,0,0,0,0,1],["久保","レギュラー","OP","2025/7/4","ヤングオール神戸",3,2,1,0,0,0,0,1,0,0,1,3,0],["青木","レギュラー","OP","2025/7/4","ヤングオール神戸",2,1,0,0,0,0,0,1,0,0,0,0,0],["三木","レギュラー","OP","2025/7/4","ヤングオール神戸",2,2,0,0,0,0,0,0,0,0,0,0,0],["田中","レギュラー","OP","2025/7/4","ヤングオール神戸",1,1,0,0,0,0,0,0,0,0,1,0,0],["山田","レギュラー","OP","2025/7/4","ヤングオール神戸",1,0,0,0,0,0,1,0,0,0,0,0,0],["平見","レギュラー","OP","2025/7/4","ヤングオール神戸",1,0,0,0,0,0,0,0,1,0,0,1,0],["木下","レギュラー","OP","2025/7/4","ヤングオール神戸",1,1,1,0,0,0,0,0,0,0,0,1,0],["小川","レギュラー","OP","2025/7/4","ヤングオール神戸",1,1,0,0,0,0,0,0,0,0,1,0,0],["藤","レギュラー","OP","2025/7/4","ヤングオール神戸",1,1,1,0,0,0,0,0,0,0,0,0,0],["松尾","レギュラー","OP","2025/7/4","ヤングオール神戸",1,1,0,0,0,0,0,0,0,0,0,0,0],["川中","スーパージュニア","OP","2025/6/21","和歌山ヤング 621",3,3,1,0,0,0,0,0,0,0,0,3,1],["石原","スーパージュニア","OP","2025/6/21","和歌山ヤング 621",3,3,0,0,0,0,0,0,0,0,0,0,0],["安岡","スーパージュニア","OP","2025/6/21","和歌山ヤング 621",2,2,2,0,1,0,0,0,0,0,0,0,2],["北室","スーパージュニア","OP","2025/6/21","和歌山ヤング 621",3,3,2,1,0,0,0,0,0,0,0,2,1],["田代","スーパージュニア","OP","2025/6/21","和歌山ヤング 621",3,3,1,0,0,0,0,0,0,0,0,0,2],["佐渡","スーパージュニア","OP","2025/6/21","和歌山ヤング 621",3,3,2,0,1,0,0,0,0,0,0,3,1],["武原","スーパージュニア","OP","2025/6/21","和歌山ヤング 621",3,3,1,0,0,0,0,0,0,0,0,0,0],["勇元","スーパージュニア","OP","2025/6/21","和歌山ヤング 621",3,2,0,0,0,0,1,0,0,0,1,0,1],["中","スーパージュニア","OP","2025/6/21","和歌山ヤング 621",3,2,0,0,0,0,0,1,0,0,0,0,1],["櫻谷し","スーパージュニア","OP","2025/6/21","和歌山ヤング 621",2,2,0,0,0,0,0,0,0,0,0,0,0],["米田","スーパージュニア","OP","2025/6/21","和歌山ヤング 621",1,1,0,0,0,0,0,0,0,0,0,0,0],["安岡","スーパージュニア","OP","2025/4/26","京都ヤング ①",3,2,0,0,0,0,1,0,0,0,1,0,1],["金沢","スーパージュニア","OP","2025/4/26","京都ヤング ①",3,3,1,0,0,0,0,0,0,0,1,1,0],["米田","スーパージュニア","OP","2025/4/26","京都ヤング ①",2,2,0,0,0,0,0,0,0,0,1,0,0],["佐渡","スーパージュニア","OP","2025/4/26","京都ヤング ①",2,2,0,0,0,0,0,0,0,0,1,0,0],["木下え","スーパージュニア","OP","2025/4/26","京都ヤング ①",2,2,1,0,1,0,0,0,0,0,1,0,0],["川中","スーパージュニア","OP","2025/4/26","京都ヤング ①",2,2,0,0,0,0,0,0,0,0,0,0,0],["石原","スーパージュニア","OP","2025/4/26","京都ヤング ①",2,2,0,0,0,0,0,0,0,0,1,0,0],["武原","スーパージュニア","OP","2025/4/26","京都ヤング ①",1,1,0,0,0,0,0,0,0,0,0,0,0],["櫻谷し","スーパージュニア","OP","2025/4/26","京都ヤング ①",2,2,0,0,0,0,0,0,0,0,1,0,0],["田代","スーパージュニア","OP","2025/4/26","京都ヤング ①",1,1,0,0,0,0,0,0,0,0,0,0,0],["中","スーパージュニア","OP","2025/4/26","京都ヤング ②",3,2,0,0,0,0,1,0,0,0,1,0,0],["岡田","スーパージュニア","OP","2025/4/26","京都ヤング ②",3,2,0,0,0,0,1,0,0,0,0,0,0],["勇元","スーパージュニア","OP","2025/4/26","京都ヤング ②",3,3,0,0,0,0,0,0,0,0,0,0,0],["北室","スーパージュニア","OP","2025/4/26","京都ヤング ②",3,2,1,0,0,0,1,0,0,0,0,0,0],["田代","スーパージュニア","OP","2025/4/26","京都ヤング ②",3,3,2,0,0,0,0,0,0,0,1,0,0],["上田","スーパージュニア","OP","2025/4/26","京都ヤング ②",2,2,0,0,0,0,0,0,0,0,0,0,0],["河井","スーパージュニア","OP","2025/4/26","京都ヤング ②",3,3,0,0,0,0,0,0,0,0,3,0,0],["上阪","スーパージュニア","OP","2025/4/26","京都ヤング ②",2,2,0,0,0,0,0,0,0,0,2,0,0],["安岡","スーパージュニア","OP","2025/4/26","京都ヤング ②",1,1,0,0,0,0,0,0,0,0,0,0,0],["川中","スーパージュニア","OP","2025/4/26","京都ヤング ②",1,1,0,0,0,0,0,0,0,0,1,0,0],["武原","スーパージュニア","OP","2025/4/26","京都ヤング ②",1,1,0,0,0,0,0,0,0,0,1,0,0],["勇元","スーパージュニア","公式","2025/5/4","サウスウインドヤング",3,3,0,0,0,0,0,0,0,0,1,0,1],["中","スーパージュニア","公式","2025/5/4","サウスウインドヤング",3,3,1,0,0,0,0,0,0,0,1,1,0],["木下え","スーパージュニア","公式","2025/5/4","サウスウインドヤング",3,2,0,0,0,0,1,0,0,0,1,0,0],["田代","スーパージュニア","公式","2025/5/4","サウスウインドヤング",3,2,2,0,0,0,1,0,0,0,0,0,0],["北室","スーパージュニア","公式","2025/5/4","サウスウインドヤング",3,2,0,0,0,0,1,0,0,0,1,0,0],["上田","スーパージュニア","公式","2025/5/4","サウスウインドヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["河井","スーパージュニア","公式","2025/5/4","サウスウインドヤング",3,3,0,0,0,0,0,0,0,0,3,0,0],["上阪","スーパージュニア","公式","2025/5/4","サウスウインドヤング",2,2,1,0,0,0,0,0,0,0,0,0,0],["石原","スーパージュニア","公式","2025/5/4","サウスウインドヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["武原","スーパージュニア","公式","2025/5/4","サウスウインドヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["安岡","スーパージュニア","公式","2025/5/4","サウスウインドヤング",1,0,0,0,0,0,1,0,0,0,0,0,0],["石原","スーパージュニア","公式","2025/5/4","貝塚ヤング",3,3,2,0,1,0,0,0,0,0,0,2,2],["金沢","スーパージュニア","公式","2025/5/4","貝塚ヤング",3,3,1,1,0,0,0,0,0,0,2,1,1],["米田","スーパージュニア","公式","2025/5/4","貝塚ヤング",3,3,1,0,0,0,0,0,0,0,0,1,0],["安岡","スーパージュニア","公式","2025/5/4","貝塚ヤング",3,3,1,1,0,0,0,0,0,0,1,1,1],["川中","スーパージュニア","公式","2025/5/4","貝塚ヤング",2,2,0,0,0,0,0,0,0,0,0,1,0],["佐渡","スーパージュニア","公式","2025/5/4","貝塚ヤング",2,2,0,0,0,0,0,0,0,0,0,0,0],["岡田","スーパージュニア","公式","2025/5/4","貝塚ヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["櫻谷し","スーパージュニア","公式","2025/5/4","貝塚ヤング",3,2,1,1,0,0,1,0,0,0,0,0,1],["勇元","スーパージュニア","公式","2025/5/4","貝塚ヤング",1,1,1,0,0,0,0,0,0,0,0,0,1],["上田","スーパージュニア","公式","2025/5/4","貝塚ヤング",1,1,1,0,0,0,0,0,0,0,0,0,0],["米田","スーパージュニア","OP","2025/5/23","ニューヤング",4,3,1,0,1,0,1,0,0,0,0,1,0],["石原","スーパージュニア","OP","2025/5/23","ニューヤング",3,3,1,0,0,0,0,0,0,0,1,0,1],["佐渡","スーパージュニア","OP","2025/5/23","ニューヤング",2,2,1,0,0,0,0,0,0,0,0,0,1],["安岡","スーパージュニア","OP","2025/5/23","ニューヤング",3,2,1,0,0,0,1,0,0,0,0,1,2],["田代","スーパージュニア","OP","2025/5/23","ニューヤング",1,1,1,0,0,0,0,0,0,0,0,2,1],["中","スーパージュニア","OP","2025/5/23","ニューヤング",3,3,2,0,1,0,0,0,0,0,0,2,2],["川中","スーパージュニア","OP","2025/5/23","ニューヤング",3,3,1,0,0,0,0,0,0,0,0,3,2],["木下え","スーパージュニア","OP","2025/5/23","ニューヤング",3,3,0,0,0,0,0,0,0,0,0,2,0],["武原","スーパージュニア","OP","2025/5/23","ニューヤング",2,2,0,0,0,0,0,0,0,0,0,1,0],["岡田","スーパージュニア","OP","2025/5/23","ニューヤング",1,0,0,0,0,0,1,0,0,0,0,0,1],["北室","スーパージュニア","OP","2025/5/23","ニューヤング",1,1,0,0,0,0,0,0,0,0,1,0,0],["櫻谷し","スーパージュニア","OP","2025/5/23","ニューヤング",1,1,1,0,0,0,0,0,0,0,0,0,1],["上阪","スーパージュニア","OP","2025/5/23","ニューヤング",1,0,0,0,0,0,1,0,0,0,0,0,1],["石原","スーパージュニア","OP","2025/6/7","京・相楽ヤング",4,3,1,0,0,0,1,0,0,0,0,0,1],["米田","スーパージュニア","OP","2025/6/7","京・相楽ヤング",4,2,0,0,0,0,1,1,0,0,0,1,1],["安岡","スーパージュニア","OP","2025/6/7","京・相楽ヤング",4,4,1,0,0,0,0,0,0,0,0,2,1],["田代","スーパージュニア","OP","2025/6/7","京・相楽ヤング",3,3,2,1,0,0,0,0,0,0,0,2,2],["佐渡","スーパージュニア","OP","2025/6/7","京・相楽ヤング",4,4,1,0,0,0,0,0,0,0,0,0,1],["川中","スーパージュニア","OP","2025/6/7","京・相楽ヤング",2,1,1,0,0,0,1,0,0,0,0,0,1],["木下え","スーパージュニア","OP","2025/6/7","京・相楽ヤング",3,3,2,0,1,0,0,0,0,0,0,3,0],["中","スーパージュニア","OP","2025/6/7","京・相楽ヤング",3,2,0,0,0,0,1,0,0,0,0,0,1],["武原","スーパージュニア","OP","2025/6/7","京・相楽ヤング",4,4,2,0,0,0,0,0,0,0,0,1,1],["岡田","スーパージュニア","OP","2025/6/7","京・相楽ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["櫻谷し","スーパージュニア","OP","2025/6/7","京・相楽ヤング",1,1,1,0,0,0,0,0,0,0,0,0,1],["上阪","スーパージュニア","OP","2025/6/7","京・相楽ヤング",1,1,0,0,0,0,0,0,0,0,0,0,1],["北室","スーパージュニア","OP","2025/6/7","京・相楽ヤング",1,1,0,0,0,0,0,0,0,0,0,1,0],["金沢","スーパージュニア","OP","2025/6/7","京・相楽ヤング",1,1,1,0,0,0,0,0,0,0,0,1,0],["石原","スーパージュニア","OP","2025/6/14","球道ヤング",4,3,0,0,0,0,1,0,0,0,1,0,1],["金沢","スーパージュニア","OP","2025/6/14","球道ヤング",4,4,0,0,0,0,0,0,0,0,0,0,0],["安岡","スーパージュニア","OP","2025/6/14","球道ヤング",4,4,2,0,0,0,0,0,0,0,1,1,3],["田代","スーパージュニア","OP","2025/6/14","球道ヤング",4,4,1,0,0,0,0,0,0,0,0,1,0],["佐渡","スーパージュニア","OP","2025/6/14","球道ヤング",4,3,1,0,1,0,1,0,0,0,0,0,0],["川中","スーパージュニア","OP","2025/6/14","球道ヤング",4,4,3,0,1,0,0,0,0,0,0,2,0],["木下え","スーパージュニア","OP","2025/6/14","球道ヤング",2,1,0,0,0,0,0,1,0,0,0,0,0],["中","スーパージュニア","OP","2025/6/14","球道ヤング",2,2,0,0,0,0,0,0,0,0,1,0,0],["勇元","スーパージュニア","OP","2025/6/14","球道ヤング",2,2,1,0,0,0,0,0,0,0,0,0,0],["北室","スーパージュニア","OP","2025/6/14","球道ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["米田","スーパージュニア","OP","2025/6/14","球道ヤング",1,1,0,0,0,0,0,0,0,0,0,0,0],["櫻谷し","スーパージュニア","OP","2025/6/14","球道ヤング",1,0,0,0,0,0,1,0,0,0,0,0,0],["川中","スーパージュニア","OP","2025/6/14","河南シニア",3,2,0,0,0,0,0,1,0,0,0,0,0],["佐渡","スーパージュニア","OP","2025/6/14","河南シニア",4,4,1,0,0,0,0,0,0,0,0,1,0],["石原","スーパージュニア","OP","2025/6/14","河南シニア",4,4,1,0,0,0,0,0,0,0,0,1,1],["北室","スーパージュニア","OP","2025/6/14","河南シニア",4,3,2,0,1,0,0,1,0,0,0,1,3],["田代","スーパージュニア","OP","2025/6/14","河南シニア",4,4,2,0,0,0,0,0,0,0,0,0,2],["武原","スーパージュニア","OP","2025/6/14","河南シニア",4,4,2,0,0,0,0,0,0,0,0,2,1],["中","スーパージュニア","OP","2025/6/14","河南シニア",4,4,1,0,0,0,0,0,0,0,1,4,1],["櫻谷し","スーパージュニア","OP","2025/6/14","河南シニア",2,2,1,0,0,0,0,0,0,0,0,0,0],["金沢","スーパージュニア","OP","2025/6/14","河南シニア",2,1,1,0,0,0,0,0,0,1,0,0,0],["河井","スーパージュニア","OP","2025/6/14","河南シニア",2,1,0,0,0,0,0,1,0,0,1,0,0],["岡田","スーパージュニア","OP","2025/6/14","河南シニア",2,1,0,0,0,0,1,0,0,0,0,0,1],["安岡","スーパージュニア","OP","2025/6/14","河南シニア",1,1,1,0,0,0,0,0,0,0,0,0,1]],"S":[["三木","ジュニア","OP","明日香ヤング",1,0],["北河","ジュニア","OP","明日香ヤング",1,0],["三木","ジュニア","OP","明日香ヤング",0,1],["山沖","ジュニア","OP","明日香ヤング",1,0],["三木","ジュニア","OP","京都ヤング",1,0],["三木","ジュニア","OP","京都ヤング",1,0],["清水","ジュニア","OP","和歌山ホークスヤング",1,0],["宮下","ジュニア","OP","和歌山ホークスヤング",1,0],["三木","ジュニア","OP","和歌山ホークスヤング",1,0],["小川","ジュニア","OP","和歌山ホークスヤング",1,0],["山中","ジュニア","OP","和歌山ホークスヤング",1,0],["宮下","ジュニア","OP","和歌山ホークスヤング",1,0],["三木","ジュニア","公式","球道ヤング",1,0],["田之頭","ジュニア","公式","球道ヤング",1,0],["三木","ジュニア","公式","貝塚ヤング",1,0],["清水","ジュニア","公式","貝塚ヤング",0,1],["三木","ジュニア","公式","RBAヤング",1,0],["三木","ジュニア","公式","RBAヤング",1,0],["田之頭","ジュニア","公式","RBAヤング",1,0],["今村","ジュニア","公式","RBAヤング",1,0],["三木","ジュニア","公式","RBAヤング",1,0],["清水","ジュニア","OP","ナガセボーイズ",1,0],["山沖","ジュニア","OP","ナガセボーイズ",1,0],["山沖","ジュニア","OP","ヤングオール神戸",1,0],["山沖","ジュニア","OP","ヤングオール神戸",1,0],["清水","ジュニア","OP","ヤング神戸須磨クラブ",1,0],["山沖","ジュニア","OP","ニューヤング",1,0],["今村","ジュニア","OP","ニューヤング",1,0],["山沖","ジュニア","OP","ニューヤング",1,0],["三木","ジュニア","OP","ニューヤング",1,0],["今村","ジュニア","OP","ニューヤング",1,0],["田之頭","ジュニア","OP","ニューヤング",1,0],["山沖","ジュニア","OP","ニューヤング",1,0],["山中","ジュニア","OP","ニューヤング",0,1],["三木","ジュニア","OP","ニューヤング",1,0],["三木","ジュニア","OP","ニューヤング",1,0],["山沖","ジュニア","公式","球道ヤング",1,0],["清水","ジュニア","公式","球道ヤング",1,0],["今村","ジュニア","公式","球道ヤング",1,0],["佐渡","ジュニア","OP","RBAヤング",1,0],["櫻谷し","ジュニア","OP","RBAヤング",1,0],["前田","ジュニア","OP","和歌山ヤング ①",0,1],["山沖","ジュニア","OP","和歌山ヤング ①",1,0],["宮下","ジュニア","OP","和歌山ヤング ①",1,0],["三木","ジュニア","OP","和歌山ヤング ①",1,0],["小川","ジュニア","OP","和歌山ヤング ①",1,0],["清水","ジュニア","OP","和歌山ヤング ①",1,0],["前田","ジュニア","OP","和歌山ヤング ②",1,0],["山中","ジュニア","OP","ヤングオール神戸",1,0],["宮下","ジュニア","OP","ヤングオール神戸",1,0],["三木","ジュニア","OP","ヤングオール神戸",1,0],["田之頭","ジュニア","OP","ヤングオール神戸",1,0],["田之頭","ジュニア","OP","ヤングオール神戸",1,0],["前田","ジュニア","OP","ヤングオール神戸",0,1],["宮下","ジュニア","OP","ヤングオール神戸",1,0],["三木","ジュニア","OP","ヤングオール神戸",1,0],["前田","ジュニア","OP","ヤングオール神戸",1,0],["三木","ジュニア","OP","ヤングオール神戸",1,0],["青木","レギュラー","OP","明日香ヤング",1,0],["木下","レギュラー","OP","明日香ヤング",1,0],["櫻谷","レギュラー","OP","明日香ヤング",1,0],["前田","レギュラー","OP","明日香ヤング",0,1],["三木","レギュラー","OP","京都ヤング ①",1,0],["松尾","レギュラー","OP","京都ヤング ①",1,0],["池田","レギュラー","OP","京都ヤング ①",0,1],["池田","レギュラー","OP","京都ヤング ②",0,1],["園崎","レギュラー","OP","河内長野ヤング",1,0],["三木","レギュラー","OP","河内長野ヤング",1,0],["櫻谷","レギュラー","OP","河内長野ヤング",1,0],["園崎","レギュラー","OP","河内長野ヤング",1,0],["櫻谷","レギュラー","OP","河内長野ヤング",1,0],["山田","レギュラー","OP","河内長野ヤング",0,1],["大園","レギュラー","OP","河内長野ヤング",1,0],["池田","レギュラー","OP","和歌山ホークスヤング ①",1,0],["園崎","レギュラー","OP","和歌山ホークスヤング ①",1,0],["田中","レギュラー","OP","和歌山ホークスヤング ①",1,0],["青木","レギュラー","OP","和歌山ホークスヤング ②",1,0],["池田","レギュラー","OP","和歌山ホークスヤング ②",1,0],["池田","レギュラー","OP","和歌山ホークスヤング ②",1,0],["久保","レギュラー","OP","ヤング神戸須磨クラブ ①",1,0],["園崎","レギュラー","OP","ヤング神戸須磨クラブ ①",1,0],["園崎","レギュラー","OP","泉大津ヤング",0,1],["木下","レギュラー","OP","泉大津ヤング",1,0],["池田","レギュラー","OP","RBAヤング",1,0],["池田","レギュラー","OP","RBAヤング",1,0],["木下","レギュラー","OP","RBAヤング",1,0],["池田","レギュラー","OP","舞洲ヤング ①",0,1],["池田","レギュラー","OP","ヤングオール神戸 ①",1,0],["大園","レギュラー","OP","ヤングオール神戸 ②",0,1],["田中","レギュラー","OP","ヤングオール神戸 ②",0,1],["園崎","レギュラー","OP","ヤングオール神戸 ②",1,0],["池田","レギュラー","OP","ヤングオール神戸 ②",1,0],["三木","レギュラー","OP","ナガセボーイズ",1,0],["大園","レギュラー","公式","貝塚ヤング",1,0],["櫻谷","レギュラー","公式","貝塚ヤング",1,0],["三木","レギュラー","公式","大阪畷ヤング",1,0],["池田","レギュラー","公式","大阪畷ヤング",0,1],["園崎","レギュラー","公式","大阪畷ヤング",1,0],["山中","レギュラー","公式","大阪畷ヤング",1,0],["清水","レギュラー","公式","大阪畷ヤング",1,0],["池田","レギュラー","公式","東大阪BBCヤング",1,0],["櫻谷","レギュラー","公式","東大阪BBCヤング",1,0],["園崎","レギュラー","公式","東大阪BBCヤング",1,0],["櫻谷","レギュラー","公式","球道ヤング",1,0],["櫻谷","レギュラー","公式","RBAヤング",1,0],["園崎","レギュラー","公式","RBAヤング",1,0],["櫻谷","レギュラー","OP","ニューヤング",1,0],["園崎","レギュラー","OP","ニューヤング",1,0],["園崎","レギュラー","OP","ヤングオール神戸",0,1],["大園","レギュラー","OP","ヤングオール神戸",1,0],["櫻谷","レギュラー","OP","ヤングオール神戸",1,0],["木下","レギュラー","OP","ヤングオール神戸",1,0],["三木","ジュニア","OP","和歌山ホークスヤング",2,0],["山沖","ジュニア","OP","和歌山ホークスヤング",0,1],["山中","ジュニア","OP","和歌山ホークスヤング",1,0],["前田","ジュニア","OP","和歌山ホークスヤング",1,0],["尾西","ジュニア","OP","和歌山ホークスヤング",1,1],["三木","ジュニア","OP","ニューヤング",1,0],["前田","ジュニア","OP","ニューヤング",3,1],["三木","ジュニア","OP","京都ヤング",1,0],["前田","ジュニア","OP","京都ヤング",1,0],["山中","ジュニア","公式","ヤング徳島ホークス",1,0],["山沖","ジュニア","公式","ヤング徳島ホークス",1,0],["三木","ジュニア","OP","ニューヤング ①",1,0],["小川","ジュニア","OP","ニューヤング ①",1,0],["山中","ジュニア","OP","ニューヤング ①",1,0],["清水","ジュニア","OP","ニューヤング ①",1,0],["田之頭","ジュニア","OP","ニューヤング ①",1,0],["宮下","ジュニア","OP","ニューヤング ②",2,0],["田之頭","ジュニア","OP","ニューヤング ②",1,0],["清水","ジュニア","OP","ニューヤング ②",1,0],["山中","ジュニア","OP","ニューヤング ②",1,0],["今村","ジュニア","OP","ニューヤング ②",1,0],["田之頭","ジュニア","OP","明日香ヤング ①",0,1],["清水","ジュニア","OP","明日香ヤング ①",0,1],["花井","ジュニア","OP","明日香ヤング ①",1,0],["前田","ジュニア","OP","明日香ヤング ②",1,0],["三木","ジュニア","OP","忠岡ボーイズ",1,1],["小川","ジュニア","OP","忠岡ボーイズ",0,1],["池田","レギュラー","OP","京相楽ヤング",1,0],["園崎","レギュラー","OP","和歌山ホークス",1,0],["櫻谷","レギュラー","OP","京都ヤング",1,0],["櫻谷","レギュラー","公式","京都ヤングフレンド・南紀ヤング",1,0],["大園","レギュラー","公式","京都ヤングフレンド・南紀ヤング",3,0],["三木","レギュラー","公式","京都ヤングフレンド・南紀ヤング",2,0],["前田","レギュラー","公式","京都ヤングフレンド・南紀ヤング",1,0],["池田","レギュラー","公式","京都ヤングフレンド・南紀ヤング",2,0],["園崎","レギュラー","公式","狭山ヤング",1,0],["櫻谷","レギュラー","公式","狭山ヤング",1,0],["池田","レギュラー","公式","狭山ヤング",1,0],["田之頭","レギュラー","公式","狭山ヤング",1,0],["青木","レギュラー","OP","明日香ヤング",1,0],["木下","レギュラー","OP","明日香ヤング",1,0],["櫻谷","レギュラー","OP","明日香ヤング",1,0],["前田","レギュラー","OP","明日香ヤング",0,1],["三木","レギュラー","OP","京都ヤングBBC ①",1,0],["松尾","レギュラー","OP","京都ヤングBBC ①",1,0],["池田","レギュラー","OP","京都ヤングBBC ①",0,1],["池田","レギュラー","OP","京都ヤングBBC ②",0,1],["園崎","レギュラー","OP","河内長野ヤング",1,0],["三木","レギュラー","OP","河内長野ヤング",1,0],["櫻谷","レギュラー","OP","河内長野ヤング",1,0],["園崎","レギュラー","OP","河内長野ヤング",1,0],["櫻谷","レギュラー","OP","河内長野ヤング",1,0],["山田","レギュラー","OP","河内長野ヤング",0,1],["大園","レギュラー","OP","河内長野ヤング",1,0],["池田","レギュラー","OP","和歌山ホークスヤング ①",1,0],["園崎","レギュラー","OP","和歌山ホークスヤング ①",1,0],["田中","レギュラー","OP","和歌山ホークスヤング ①",1,0],["青木","レギュラー","OP","和歌山ホークスヤング ②",1,0],["池田","レギュラー","OP","和歌山ホークスヤング ②",1,0],["池田","レギュラー","OP","和歌山ホークスヤング ②",1,0],["久保","レギュラー","OP","ヤング神戸須磨クラブ ①",1,0],["園崎","レギュラー","OP","ヤング神戸須磨クラブ ①",1,0],["園崎","レギュラー","OP","泉大津ヤング",0,1],["木下","レギュラー","OP","泉大津ヤング",1,0],["池田","レギュラー","OP","RBAヤング",1,0],["池田","レギュラー","OP","RBAヤング",1,0],["木下","レギュラー","OP","RBAヤング",1,0],["池田","レギュラー","OP","舞洲ヤング ①",0,1],["池田","レギュラー","OP","ヤングオール神戸 ①",1,0],["大園","レギュラー","OP","ヤングオール神戸 ②",0,1],["田中","レギュラー","OP","ヤングオール神戸 ②",0,1],["園崎","レギュラー","OP","ヤングオール神戸 ②",1,0],["池田","レギュラー","OP","ヤングオール神戸 ②",1,0],["三木","レギュラー","OP","ナガセボーイズ",1,0],["大園","レギュラー","公式","貝塚ヤング",1,0],["櫻谷","レギュラー","公式","貝塚ヤング",1,0],["三木","レギュラー","公式","大阪畷ヤング",1,0],["池田","レギュラー","公式","大阪畷ヤング",0,1],["園崎","レギュラー","公式","大阪畷ヤング",1,0],["山中","レギュラー","公式","大阪畷ヤング",1,0],["清水","レギュラー","公式","大阪畷ヤング",1,0],["池田","レギュラー","公式","東大阪BBCヤング",1,0],["櫻谷","レギュラー","公式","東大阪BBCヤング",1,0],["園崎","レギュラー","公式","東大阪BBCヤング",1,0],["櫻谷","レギュラー","公式","球道ヤング",1,0],["櫻谷","レギュラー","公式","RBAヤング",1,0],["園崎","レギュラー","公式","RBAヤング",1,0],["櫻谷","レギュラー","OP","ニューヤング",1,0],["園崎","レギュラー","OP","ニューヤング",1,0],["中","スーパージュニア","公式","サウスウインドヤング",1,0],["上阪","スーパージュニア","公式","サウスウインドヤング",1,0],["田代","スーパージュニア","公式","サウスウインドヤング",1,0],["石原","スーパージュニア","公式","貝塚ヤング",1,0],["川中","スーパージュニア","公式","貝塚ヤング",1,0],["米田","スーパージュニア","公式","貝塚ヤング",1,0],["上田","スーパージュニア","公式","貝塚ヤング",1,0],["川中","スーパージュニア","OP","和歌山ヤング 621",1,0],["安岡","スーパージュニア","OP","和歌山ヤング 621",1,0],["上阪","スーパージュニア","OP","和歌山ヤング 621",0,1],["田代","スーパージュニア","OP","和歌山ヤング 621",1,0],["佐渡","スーパージュニア","OP","和歌山ヤング 621",1,0],["田代","スーパージュニア","OP","京都ヤング ①",0,1],["石原","スーパージュニア","OP","ニューヤング",1,0],["安岡","スーパージュニア","OP","ニューヤング",1,0],["米田","スーパージュニア","OP","ニューヤング",1,0],["安岡","スーパージュニア","OP","ニューヤング",1,0],["中","スーパージュニア","OP","ニューヤング",1,0],["川中","スーパージュニア","OP","ニューヤング",1,0],["米田","スーパージュニア","OP","京・相楽ヤング",1,0],["石原","スーパージュニア","OP","球道ヤング",1,0],["安岡","スーパージュニア","OP","球道ヤング",1,0],["佐渡","スーパージュニア","OP","球道ヤング",1,0],["川中","スーパージュニア","OP","球道ヤング",1,0],["武原","スーパージュニア","OP","河南シニア",1,0],["北室","スーパージュニア","OP","河南シニア",1,0]],"P":{"ジュニア":{"all":[["宮下",12,12,0,128,41,28,25,27,3,29,0],["花井",4,0,4,6,7,9,9,6,1,0,1],["藤　妹",10,4,6,70,32,23,15,13,2,3,0],["田之頭",3,2,1,23,8,4,4,5,0,5,0],["三木",3,0,3,12,5,0,0,1,0,2,0],["山中",7,1,6,41,6,4,4,16,1,8,0],["尾西",3,0,3,8,8,16,15,6,0,1,0],["山沖",1,0,1,3,1,3,3,4,0,1,0],["清水",5,0,5,29,8,3,2,6,1,8,0],["武原",3,0,3,16,4,2,0,4,0,1,0],["櫻谷し",1,0,1,3,5,5,5,2,0,1,0],["今村",2,0,2,4,2,4,4,6,0,0,0],["石原",1,0,1,3,0,1,1,2,0,1,0]],"OP":[["宮下",9,9,0,96,33,22,19,21,3,22,0],["花井",4,0,4,6,7,9,9,6,1,0,1],["藤　妹",9,3,6,58,28,21,13,12,2,2,0],["田之頭",3,2,1,23,8,4,4,5,0,5,0],["三木",3,0,3,12,5,0,0,1,0,2,0],["山中",6,1,5,29,5,4,4,13,1,7,0],["尾西",3,0,3,8,8,16,15,6,0,1,0],["山沖",1,0,1,3,1,3,3,4,0,1,0],["清水",3,0,3,17,3,2,1,3,0,6,0],["武原",2,0,2,12,4,2,0,2,0,1,0],["櫻谷し",1,0,1,3,5,5,5,2,0,1,0],["今村",2,0,2,4,2,4,4,6,0,0,0],["石原",1,0,1,3,0,1,1,2,0,1,0]],"公式":[["宮下",3,3,0,32,8,6,6,6,0,7,0],["清水",2,0,2,12,5,1,1,3,1,2,0],["山中",1,0,1,12,1,0,0,3,0,1,0],["藤　妹",1,1,0,12,4,2,2,1,0,1,0],["武原",1,0,1,4,0,0,0,2,0,0,0]]},"レギュラー":{"all":[["青木",19,8,11,143,54,54,46,34,5,32,3],["藤",18,11,7,129,55,38,38,32,4,13,4],["池田",6,2,4,27,13,18,15,16,3,3,0],["橋本",19,2,17,107,41,29,23,16,0,10,1],["宮下",6,0,6,32,10,7,6,8,1,6,0],["田之頭",2,0,2,9,6,3,3,0,0,1,0],["三木",1,0,1,2,1,0,0,0,0,0,0],["園崎",1,0,1,6,2,3,3,5,1,2,0]],"OP":[["青木",15,8,7,115,46,45,38,31,4,20,2],["藤",12,6,6,82,34,28,28,24,4,7,2],["池田",6,2,4,27,13,18,15,16,3,3,0],["橋本",16,1,15,84,32,24,18,12,0,5,1],["宮下",3,0,3,10,3,2,2,2,1,2,0],["田之頭",2,0,2,9,6,3,3,0,0,1,0],["三木",1,0,1,2,1,0,0,0,0,0,0],["園崎",1,0,1,6,2,3,3,5,1,2,0]],"公式":[["藤",6,5,1,47,21,10,10,8,0,6,2],["宮下",3,0,3,22,7,5,4,6,0,4,0],["青木",4,0,4,28,8,9,8,3,1,12,1],["橋本",3,1,2,23,9,5,5,4,0,5,0]]},"スーパージュニア":{"all":[["上田",2,0,2,9,0,1,1,4,0,2,0],["勇元",5,2,3,33,6,4,2,4,0,3,0],["安岡",2,0,2,6,0,0,0,2,0,1,0],["岡田",5,0,5,30,5,1,0,2,0,5,0],["川中",2,0,2,6,9,8,8,4,0,0,0],["木下え",2,0,2,6,1,0,0,1,1,0,0],["櫻谷し",4,1,3,21,3,1,1,4,0,3,0],["武原",5,3,2,30,8,4,2,1,0,7,0],["田代",3,2,1,9,4,4,4,7,0,1,0],["石原",2,1,1,9,4,4,4,2,0,3,0]],"OP":[["上田",1,0,1,6,0,0,0,3,0,1,0],["勇元",4,2,2,30,6,4,2,4,0,2,0],["安岡",1,0,1,3,0,0,0,1,0,1,0],["岡田",4,0,4,27,5,1,0,2,0,4,0],["川中",1,0,1,3,8,8,8,3,0,0,0],["木下え",1,0,1,3,0,0,0,0,1,0,0],["櫻谷し",3,0,3,18,2,1,1,3,0,2,0],["武原",4,3,1,27,7,4,2,1,0,4,0],["田代",2,1,1,6,3,3,3,5,0,0,0],["石原",1,1,0,6,1,1,1,1,0,2,0]],"公式":[["上田",1,0,1,3,0,1,1,1,0,1,0],["勇元",1,0,1,3,0,0,0,0,0,1,0],["安岡",1,0,1,3,0,0,0,1,0,0,0],["岡田",1,0,1,3,0,0,0,0,0,1,0],["川中",1,0,1,3,1,0,0,1,0,0,0],["木下え",1,0,1,3,1,0,0,1,0,0,0],["櫻谷し",1,1,0,3,1,0,0,1,0,1,0],["武原",1,0,1,3,1,0,0,0,0,3,0],["田代",1,1,0,3,1,1,1,2,0,1,0],["石原",1,0,1,3,3,3,3,1,0,1,0]]}}};</script>
+<script>
+const KEY='eagles-scorebook-v1';
+const POS=['','投','捕','一','二','三','遊','左','中','右'];
+const RES={
+  '1B':{l:'単打',hit:1,ab:1,base:1,F:1,fmt:p=>p+'安'},
+  '2B':{l:'二塁打',hit:1,ab:1,base:2,F:1,fmt:p=>p+'2'},
+  '3B':{l:'三塁打',hit:1,ab:1,base:3,F:1,fmt:p=>p+'3'},
+  'HR':{l:'本塁打',hit:1,ab:1,base:4,F:1,fmt:p=>p+'本'},
+  'GO':{l:'ゴロ',ab:1,out:1,F:1,fmt:p=>p+'ゴ'},
+  'FO':{l:'フライ',ab:1,out:1,F:1,fmt:p=>p+'飛'},
+  'LO':{l:'ライナー',ab:1,out:1,F:1,fmt:p=>p+'直'},
+  'DP':{l:'併殺',ab:1,out:2,F:1,fmt:p=>p+'併'},
+  'K':{l:'空振三振',ab:1,out:1,so:1,fmt:()=>'空三振'},
+  'KL':{l:'見逃三振',ab:1,out:1,so:1,fmt:()=>'見三振'},
+  'BB':{l:'四球',base:1,bb:1,fmt:()=>'四球'},
+  'HBP':{l:'死球',base:1,hbp:1,fmt:()=>'死球'},
+  'SH':{l:'犠打',out:1,sh:1,F:1,fmt:p=>p+'犠'},
+  'SF':{l:'犠飛',out:1,sf:1,F:1,fmt:p=>p+'犠飛'},
+  'E':{l:'失策',ab:1,base:1,F:1,fmt:p=>p+'失'},
+  'FC':{l:'野選',ab:1,base:1,F:1,fmt:p=>p+'野選'}
+};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+function blank(players){return{game:{date:today(),opp:'',team:'レギュラー',kind:'公式',side:'先攻'},innings:7,
+  players:players||Array.from({length:9},()=>({name:'',pos:''})),pa:{},opp:[],pitch:[],cp:0,cnt:{b:0,s:0},sample:false}}
+function sample(){
+  const g=blank([['三木','中'],['田之頭','遊'],['前田','二'],['山中','一'],['清水','捕'],['小川','三'],['宮下','右'],['園崎','左'],['藤','投']].map(([name,pos])=>({name,pos})));
+  g.game.opp='サンプル相手';g.sample=true;
+  const P=(r,f,base,rbi,sb)=>({r,f:f||0,base:base??(RES[r].base||0),rbi:rbi||0,sb:sb||0});
+  Object.assign(g.pa,{
+    '0-1':[P('1B',8,4,0,1)],'1-1':[P('SH',1)],'2-1':[P('2B',9,4,1)],'3-1':[P('1B',7,1,1)],'4-1':[P('K')],'5-1':[P('GO',6)],
+    '6-2':[P('BB')],'7-2':[P('FO',8)],'8-2':[P('GO',4)],'0-2':[P('KL')],
+    '1-3':[P('3B',9,4)],'2-3':[P('SF',8,0,1)],'3-3':[P('GO',5)],'4-3':[P('1B',8)],'5-3':[P('FO',7)],
+    '6-4':[P('E',6)],'7-4':[P('DP',4)],'8-4':[P('K')]
+  });
+  g.opp=[0,1,0,2];g.pitch=[{name:'藤',role:'先発',outs:12,ha:5,r:3,er:2,bb:2,hbp:0,k:3,hr:0,np:64,st:39,bl:25,fl:11}];return g;
+}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.cur)return s}catch(e){}return{cur:sample(),saved:{}}}
+const fix=g=>{if(!g.pitch){g.pitch=[];g.cp=0}g.pitch.forEach(p=>{p.st=p.st||0;p.bl=p.bl||0;p.fl=p.fl||0});if(!g.cnt)g.cnt={b:0,s:0};g.players.forEach(pl=>{if(!pl.hist||!pl.hist.length)pl.hist=[{name:pl.name||'',pos:pl.pos||'',type:'先発',inn:1}]});return g};
+let store=load(),G=fix(store.cur);
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}}
+
+function pasOf(r){const out=[];for(let i=1;i<=G.innings;i++)(G.pa[r+'-'+i]||[]).forEach(p=>out.push(p));return out}
+function stat(list){const s={np:0,fl:0,pa:0,ab:0,h:0,d:0,t:0,hr:0,rbi:0,run:0,bb:0,hbp:0,so:0,sh:0,sf:0,sb:0,cs:0};
+  list.forEach(p=>{const R=RES[p.r];s.pa++;s.np+=(p.sq||'').length;s.fl+=((p.sq||'').match(/F/g)||[]).length;if(R.ab)s.ab++;if(R.hit)s.h++;if(p.r==='2B')s.d++;if(p.r==='3B')s.t++;if(p.r==='HR')s.hr++;
+    s.rbi+=p.rbi||0;if(p.base===4)s.run++;if(R.bb)s.bb++;if(R.hbp)s.hbp++;if(R.so)s.so++;if(R.sh)s.sh++;if(R.sf)s.sf++;s.sb+=p.sb||0;s.cs+=p.cs||0});return s}
+function inningPAs(i){const o=[];G.players.forEach((_,r)=>(G.pa[r+'-'+i]||[]).forEach(p=>o.push(p)));return o}
+const label=p=>RES[p.r].fmt(p.f?POS[p.f]:'');
+const SQL={S:'ス',F:'フ',B:'ボ'};
+function cnt(sq){let b=0,s=0;for(const c of sq||''){if(c==='B')b++;else if(c==='S')s++;else if(s<2)s++}return{b,s}}
+const sqCount=sq=>{if(!sq)return'';const c=cnt(sq),n=sq.length,f=(sq.match(/F/g)||[]).length;return `${n}球 ・ ${Math.min(c.b,4)}B${Math.min(c.s,3)}S${f?` ・ ファウル${f}`:''}`};
+
+// ---- シーズン成績（eagles.html の GAME_RECORDS / SB_LOG から取り込み）
+let SF='all';try{SF=localStorage.getItem(KEY+'-sf')||'all'}catch(e){}
+const normName=s=>String(s||'').replace(/﨑/g,'崎').trim();
+const oppBase=s=>String(s||'').replace(/\s*\d+$/,'').trim();
+const SR=(SEASON?SEASON.R:[]).map(a=>({player:a[0],team:a[1],gameType:a[2],date:a[3],opponent:a[4],pa:a[5],ab:a[6],h:a[7],d2:a[8],d3:a[9],hr:a[10],bb:a[11],hbp:a[12],sf:a[13],sh:a[14],k:a[15],rbi:a[16],r:a[17]}));
+const SSB=(SEASON?SEASON.S:[]).map(a=>({player:a[0],team:a[1],gameType:a[2],opponent:a[3],sb:a[4],cs:a[5]}));
+const ZERO=()=>({g:0,pa:0,ab:0,h:0,d2:0,d3:0,hr:0,bb:0,hbp:0,sf:0,sh:0,k:0,rbi:0,r:0,sb:0,cs:0});
+function seasonOf(name,team,f,opp){name=normName(name);if(!name)return null;f=f||SF;
+  const ok=r=>normName(r.player)===name&&r.team===team&&(f==='all'||r.gameType===f)&&(!opp||oppBase(r.opponent)===oppBase(opp));
+  const z=ZERO(),games=new Set();
+  SR.filter(ok).forEach(r=>{games.add(r.date+'|'+r.opponent);for(const k in z)if(k in r)z[k]+=r[k]});
+  z.g=games.size;SSB.filter(ok).forEach(s=>{z.sb+=s.sb;z.cs+=s.cs||0});return z.pa?z:null}
+// ---- 選手交代（代打・代走・守備）
+const SUBT=['代打','代走','守備'];
+const slotP=r=>{const pl=G.players[r];if(!pl.hist||!pl.hist.length)pl.hist=[{name:pl.name||'',pos:pl.pos||'',type:'先発',inn:1}];return pl.hist};
+const syncCur=pl=>{const c=pl.hist[pl.hist.length-1];pl.name=c.name;pl.pos=c.pos};
+function batterAt(r,i){const h=slotP(r);let w=h[0];h.forEach(e=>{if(e.type==='代走'?e.inn<i:e.inn<=i)w=e});return w.name}
+function runnerAt(r,i,who){const e=slotP(r).filter(e=>e.type==='代走'&&e.inn===i).pop();return e?e.name:who}
+const whoOf=(p,r,i)=>p.who||batterAt(r,i);
+const rnOf=(p,r,i)=>p.rn||runnerAt(r,i,whoOf(p,r,i));
+function people(){const out=[];G.players.forEach((pl,r)=>slotP(r).forEach(e=>{const n=normName(e.name);if(n&&!out.some(o=>o.name===n))out.push({name:n,pos:e.pos,type:e.type,inn:e.inn,r})}));return out}
+function personStat(name){const bat=[],run=[];
+  G.players.forEach((pl,r)=>{for(let i=1;i<=G.innings;i++)(G.pa[r+'-'+i]||[]).forEach(p=>{if(normName(whoOf(p,r,i))===name)bat.push(p);if(normName(rnOf(p,r,i))===name)run.push(p)})});
+  const s=stat(bat);s.run=run.filter(p=>p.base===4).length;s.sb=run.reduce((a,p)=>a+(p.sb||0),0);s.cs=run.reduce((a,p)=>a+(p.cs||0),0);s.any=bat.length+run.length;return s}
+const toZ=s=>({g:s.any?1:0,pa:s.pa,ab:s.ab,h:s.h,d2:s.d,d3:s.t,hr:s.hr,bb:s.bb,hbp:s.hbp,sf:s.sf,sh:s.sh,k:s.so,rbi:s.rbi,r:s.run,sb:s.sb,cs:s.cs});
+const todayP=name=>toZ(personStat(normName(name)));
+function todayZ(r){const s=stat(pasOf(r));return{g:s.pa?1:0,pa:s.pa,ab:s.ab,h:s.h,d2:s.d,d3:s.t,hr:s.hr,bb:s.bb,hbp:s.hbp,sf:s.sf,sh:s.sh,k:s.so,rbi:s.rbi,r:s.run,sb:s.sb}}
+const addZ=(a,b)=>{const o={...(a||ZERO())};for(const k in b)o[k]+=b[k];return o};
+function rates(z){if(!z)return{};const tb=z.h+z.d2+2*z.d3+3*z.hr,od=z.ab+z.bb+z.hbp+z.sf;
+  const avg=z.ab?z.h/z.ab:null,obp=od?(z.h+z.bb+z.hbp)/od:null,slg=z.ab?tb/z.ab:null;
+  return{avg,obp,slg,ops:obp!=null&&slg!=null?obp+slg:null,kp:z.pa?z.k/z.pa*100:null}}
+const f3=v=>v==null?'–':v.toFixed(3).replace(/^0\./,'.');
+const roster=team=>{const m={};SR.filter(r=>r.team===team).forEach(r=>{const n=normName(r.player);m[n]=(m[n]||0)+r.pa});return Object.keys(m).sort((a,b)=>m[b]-m[a])};
+const sfLabel=()=>SF==='all'?'全試合':SF;
+
+function diamond(p,size=22){
+  const pts=[[12,22],[22,12],[12,2],[2,12],[12,22]];const b=p.base||0;
+  let seg='';if(b>0)seg='M'+pts.slice(0,b+1).map(q=>q.join(',')).join(' L');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true">
+  <polygon points="12,22 22,12 12,2 2,12" fill="${b===4?'var(--run)':'none'}" fill-opacity="${b===4?.85:0}" stroke="var(--rule)" stroke-width="1"/>
+  ${b>0&&b<4?`<path d="${seg}" fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`:''}</svg>`}
+
+function render(){
+  $('m-date').value=G.game.date;$('m-opp').value=G.game.opp;$('m-team').value=G.game.team;$('m-kind').value=G.game.kind;$('m-side').value=G.game.side;
+  $('sampleBadge').hidden=!G.sample;
+  // line score
+  const n=G.innings;let eagleR=0,oppR=0,eagleH=0;
+  const er=[];for(let i=1;i<=n;i++){const l=inningPAs(i);const r=l.filter(p=>p.base===4).length;eagleH+=l.filter(p=>RES[p.r].hit).length;eagleR+=r;er.push(l.length?r:'')}
+  for(let i=0;i<n;i++)oppR+=+G.opp[i]||0;
+  const eRow=`<tr><td class="team"><span>${G.game.side==='先攻'?'先':'後'}</span>イーグルス</td>${er.map(v=>`<td>${v}</td>`).join('')}<td class="tot R">${eagleR}</td><td class="tot">${eagleH}</td></tr>`;
+  const oRow=`<tr><td class="team"><span>${G.game.side==='先攻'?'後':'先'}</span>${esc(G.game.opp||'相手')}</td>${Array.from({length:n},(_,i)=>`<td><input id="opp${i}" inputmode="numeric" aria-label="相手 ${i+1}回の得点" value="${G.opp[i]??''}" data-oi="${i}"></td>`).join('')}<td class="tot R">${oppR}</td><td class="tot">${G.pitch.reduce((a,p)=>a+p.ha,0)}</td></tr>`;
+  $('line').innerHTML=`<thead><tr><th></th>${Array.from({length:n},(_,i)=>`<th>${i+1}</th>`).join('')}<th>計</th><th>安</th></tr></thead><tbody>${G.game.side==='先攻'?eRow+oRow:oRow+eRow}</tbody>`;
+  // grid
+  let h=`<thead><tr><th class="nm">打順・選手</th>`;
+  for(let i=1;i<=n;i++){const o=Math.min(3,inningPAs(i).reduce((a,p)=>a+(RES[p.r].out||0)+(p.cs||0),0));h+=`<th>${i}回<span class="outs">${'●'.repeat(o)}</span></th>`}
+  h+=`<th class="s sep">打数</th><th class="s">安打</th><th class="s">打点</th><th class="s">得点</th><th class="s">四死</th><th class="s">三振</th><th class="s">盗塁</th><th class="s">盗死</th><th class="s">球数</th></tr></thead><tbody>`;
+  const tot=[];
+  G.players.forEach((pl,r)=>{
+    h+=`<tr><td class="nm"><button data-pl="${r}" aria-label="${r+1}番 選手を編集"><span class="no">${r+1}</span><span class="pos">${esc(pl.pos)||'守備–'}</span><span class="pn">${esc(pl.name)||'（未入力）'}</span>${slotP(r).length>1?`<span class="sv subl">${slotP(r).slice(1).map(e=>e.type+e.inn+'回').join('・')}</span>`:''}<span class="sv">${(()=>{const z=seasonOf(pl.name,G.game.team),t=todayP(pl.name);const a=z?`<b>${f3(rates(z).avg)}</b>`:(pl.name?'記録なし':'');return a+(t.pa?` · ${t.ab}-${t.h}`:'')})()}</span></button></td>`;
+    for(let i=1;i<=n;i++){const l=G.pa[r+'-'+i]||[];
+      h+=`<td class="c"><button data-r="${r}" data-i="${i}" aria-label="${r+1}番 ${i}回">${l.length?l.map(p=>`<div class="pa">${diamond(p)}<div><span class="lb${RES[p.r].hit?' hit':''}">${esc(label(p))}</span>${p.rbi||p.sb||p.cs?`<span class="rb">${'●'.repeat(p.rbi||0)}${p.sb?' 盗'+(p.sb>1?p.sb:''):''}${p.cs?' 盗死':''}</span>`:''}${p.sq?`<span class="sqn">${p.sq.length}球</span>`:''}${slotP(r).length>1?`<span class="sqn">${esc(whoOf(p,r,i))}${rnOf(p,r,i)!==whoOf(p,r,i)?' 走'+esc(rnOf(p,r,i)):''}</span>`:''}</div></div>`).join(''):'<span class="empty">·</span>'}</button></td>`}
+    const s=stat(pasOf(r));tot.push(s);
+    h+=`<td class="s sep">${s.ab}</td><td class="s">${s.h}</td><td class="s">${s.rbi}</td><td class="s">${s.run}</td><td class="s">${s.bb+s.hbp}</td><td class="s">${s.so}</td><td class="s">${s.sb}</td><td class="s">${s.cs}</td><td class="s">${s.np||'–'}</td></tr>`});
+  const T=tot.reduce((a,s)=>{for(const k in s)a[k]=(a[k]||0)+s[k];return a},{});
+  h+=`</tbody><tfoot><tr><td class="nm">チーム計</td>${'<td></td>'.repeat(n)}<td class="s sep">${T.ab||0}</td><td class="s">${T.h||0}</td><td class="s">${T.rbi||0}</td><td class="s">${T.run||0}</td><td class="s">${(T.bb||0)+(T.hbp||0)}</td><td class="s">${T.so||0}</td><td class="s">${T.sb||0}</td><td class="s">${T.cs||0}</td><td class="s">${T.np||'–'}</td></tr></tfoot>`;
+  $('grid').innerHTML=h;
+  renderPitch();
+  renderSeason();
+  persist();
+}
+// ---- 投手
+const PK=['outs','np','st','fl','bl','ha','hr','bb','hbp','k','r','er'];
+const PL={outs:'アウト数',np:'投球数',st:'ストライク(ファウル含む)',fl:'ファウル',bl:'ボール',ha:'被安打',hr:'被本塁打',bb:'四球',hbp:'死球',k:'奪三振',r:'失点',er:'自責点'};
+const ipStr=o=>`${Math.floor(o/3)}.${o%3}`;
+const newP=(name,role)=>({name,role,outs:0,ha:0,r:0,er:0,bb:0,hbp:0,k:0,hr:0,np:0,st:0,bl:0,fl:0});
+// 結果ボタンは「打席を終わらせた最後の1球」も数える（インプレー＝ストライク、死球・四球＝ボール）
+const PAD=[['凡打アウト',{outs:1,np:1,st:1},'o',1],['三振',{outs:1,k:1,np:1,st:1},'o',1],['併殺',{outs:2,np:1,st:1},'o',1],['被安打',{ha:1,np:1,st:1},'',1],
+  ['被本塁打',{ha:1,hr:1,np:1,st:1},'',1],['四球',{bb:1,np:1,bl:1},'',1],['死球',{hbp:1,np:1,bl:1},'',1],['アウト(盗塁死等)',{outs:1},'o',0],
+  ['失点(自責)',{r:1,er:1},'r',0],['失点(非自責)',{r:1},'r',0]];
+const pct=(a,b)=>b?Math.round(a/b*100)+'%':'–';
+const dots=(n,max,cls)=>Array.from({length:max},(_,i)=>`<i class="${i<n?cls:''}"></i>`).join('');
+let undo=[];
+function pSeason(name,team,f){const t=SEASON&&SEASON.P&&SEASON.P[team];const a=t&&t[f||SF];const r=a&&a.find(x=>x[0].trim()===String(name).trim());
+  if(!r)return null;const[,g,gs,gf,outs,ha,rr,er,bb,hbp,k,hr]=r;return{g,gs,gf,outs,ha,r:rr,er,bb,hbp,k,hr}}
+const pAdd=(z,p)=>({g:(z?z.g:0)+1,gs:(z?z.gs:0)+(p.role==='先発'?1:0),gf:(z?z.gf:0)+(p.role==='先発'?0:1),outs:(z?z.outs:0)+p.outs,ha:(z?z.ha:0)+p.ha,r:(z?z.r:0)+p.r,er:(z?z.er:0)+p.er,bb:(z?z.bb:0)+p.bb,hbp:(z?z.hbp:0)+p.hbp,k:(z?z.k:0)+p.k,hr:(z?z.hr:0)+p.hr});
+function prates(z){if(!z||!z.outs)return{};const ip=z.outs/3;return{era:z.er*9/ip,whip:(z.ha+z.bb)/ip,k9:z.k*9/ip,bb9:z.bb*9/ip}}
+const f2=v=>v==null?'–':v.toFixed(2);
+const pRoster=team=>{const t=SEASON&&SEASON.P&&SEASON.P[team];return t?t.all.slice().sort((a,b)=>b[4]-a[4]).map(x=>x[0]):[]};
+function renderPitch(){
+  $('plist').innerHTML=G.pitch.length?G.pitch.map((p,k)=>`<div class="prow${k===G.cp?' cur':''}"><button class="sel" data-cp="${k}" aria-label="${esc(p.name)}を登板中にする"><span class="pnm">${esc(p.name)}<small>${p.role}</small>${k===G.cp?'<span class="now">登板中</span>':''}</span><span class="pl"><span><b>${ipStr(p.outs)}</b>回</span><span><b>${p.np}</b>球（S${p.st}・F${p.fl}・B${p.bl}）</span><span>S率<b>${pct(p.st,p.st+p.bl)}</b></span><span>被安<b>${p.ha}</b></span><span>失点<b>${p.r}</b>(自責${p.er})</span><span>四死<b>${p.bb+p.hbp}</b></span><span>奪三振<b>${p.k}</b></span></span></button><button class="ed" data-pe="${k}">修正</button></div>`).join('')
+    :'<p class="muted" style="margin:0">「＋ 投手を追加」で先発投手を登録すると、アウトや被安打をボタンで記録できます。</p>';
+  const p=G.pitch[G.cp];
+  const c=G.cnt;
+  $('padWrap').innerHTML=p?`<div class="padh"><b>${esc(p.name)} に記録</b><span class="muted">1球ごとにタップ</span></div>
+  <div class="cnt"><div class="bso"><div><span>B</span>${dots(c.b,3,'onB')}</div><div><span>S</span>${dots(c.s,2,'onS')}</div></div>
+    <div class="tot"><div>投球数<b>${p.np}</b></div><div>ストライク<b>${p.st}</b></div><div>うちファウル<b>${p.fl}</b></div><div>ボール<b>${p.bl}</b></div><div>S率<b>${pct(p.st,p.st+p.bl)}</b></div></div></div>
+  <div class="pitchrow"><button class="st" data-pad="S">ストライク</button><button class="st" data-pad="F">ファウル</button><button class="bl" data-pad="B">ボール</button></div>
+  <div class="grp-l" style="margin-top:10px">打席の結果</div>
+  <div class="pad" style="margin-top:0">${PAD.map((x,k)=>`<button data-pad="${k}" class="${x[2]||''}">${x[0]}</button>`).join('')}<button class="undo" data-pad="u" ${undo.length?'':'disabled'}>1つ戻す</button></div>
+  <p class="hint">ファウルはストライクに含めて数えます（2ストライク後はカウントが進みません）。3つ目のストライクは三振、4つ目のボールは四球として自動で記録します。結果ボタンは最後の1球も数えます。</p>`:'';
+}
+$('plist').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.cp!=null){G.cp=+b.dataset.cp;render()}else openPitcher(+b.dataset.pe)});
+$('padWrap').addEventListener('click',e=>{const b=e.target.closest('[data-pad]');if(!b)return;const p=G.pitch[G.cp];if(!p)return;
+  if(b.dataset.pad==='u'){const u=undo.pop();if(u){const q=G.pitch[u.k];if(q)for(const k in u.d)q[k]=Math.max(0,q[k]-u.d[k]);G.cnt=u.c}render();toast('1つ戻しました');return}
+  const before={...G.cnt},apply=(d,name,ends)=>{for(const k in d)p[k]+=d[k];undo.push({k:G.cp,d,c:before});if(undo.length>80)undo.shift();if(ends)G.cnt={b:0,s:0};render();toast(`${p.name}：${name}`)};
+  const v=b.dataset.pad;
+  if(v==='S'){if(G.cnt.s>=2)return apply(PAD[1][1],'見逃し・空振り三振',1);G.cnt.s++;return apply({np:1,st:1},'ストライク')}
+  if(v==='F'){if(G.cnt.s<2)G.cnt.s++;return apply({np:1,st:1,fl:1},'ファウル')}
+  if(v==='B'){if(G.cnt.b>=3)return apply(PAD[5][1],'四球',1);G.cnt.b++;return apply({np:1,bl:1},'ボール')}
+  const x=PAD[+v];apply(x[1],x[0],x[3])});
+$('addP').onclick=()=>openPitcher(-1);
+function openPitcher(k){S=null;const isNew=k<0,d=isNew?newP('',G.pitch.length?'救援':'先発'):clone(G.pitch[k]);
+  const card=()=>{const el=$('pp-card');if(!el)return;const z=pSeason(d.name,G.game.team),R=prates(z),C=prates(pAdd(z,d));
+    el.innerHTML=!d.name.trim()?'':z?`<div class="card"><div class="grp-l" style="margin:0">シーズン（${sfLabel()}） ${z.g}登板（先発${z.gs}）</div>
+      <div class="kv"><div><span>投球回</span><b>${ipStr(z.outs)}</b></div><div><span>防御率</span><b>${f2(R.era)}</b></div><div><span>WHIP</span><b>${R.whip!=null?R.whip.toFixed(2):'–'}</b></div><div><span>奪三振率</span><b>${f2(R.k9)}</b></div>
+      <div><span>被安打</span><b>${z.ha}</b></div><div><span>四死球</span><b>${z.bb+z.hbp}</b></div><div><span>奪三振</span><b>${z.k}</b></div><div><span>今日込防御率</span><b>${d.outs?f2(C.era):'–'}</b></div></div></div>`
+      :`<p class="muted" style="margin:0">${esc(G.game.team)}・${sfLabel()}の登板記録はまだありません。</p>`};
+  const draw=()=>{openSheet(`<div class="sh-h"><h3>${isNew?'投手を追加':'投手の記録を修正'}</h3><button class="x" data-act="close" aria-label="閉じる">×</button></div>
+    <div class="row2"><label class="f">投手名<input id="pp-name" value="${esc(d.name)}" placeholder="例：藤"></label>
+    <label class="f">役割<select id="pp-role"><option ${d.role==='先発'?'selected':''}>先発</option><option ${d.role==='救援'?'selected':''}>救援</option></select></label></div>
+    <div><div class="grp-l">${esc(G.game.team)}の投手から選ぶ</div><div class="roster">${pRoster(G.game.team).map(n=>`<button class="chip" data-ppick="${esc(n)}" aria-pressed="${n===d.name}">${esc(n)}</button>`).join('')||'<span class="muted">登板記録のある投手はいません</span>'}</div></div>
+    <div id="pp-card"></div>
+    ${isNew?'':`<div class="stp">${PK.map(x=>`<div><div class="grp-l">${PL[x]}${x==='outs'?`（${ipStr(d.outs)}回）`:''}</div><div class="step"><button data-ps="${x}:-1" aria-label="${PL[x]}を減らす">−</button><output>${d[x]}</output><button data-ps="${x}:1" aria-label="${PL[x]}を増やす">＋</button></div></div>`).join('')}</div>`}
+    <div class="acts">${isNew?'':'<button class="btn warn" id="pp-del">この投手を削除</button>'}<button class="btn pri" id="pp-ok">${isNew?'追加して登板中にする':'決定'}</button></div>`);
+    card();
+    $('pp-name').addEventListener('input',e=>{d.name=e.target.value;card()});
+    $('pp-role').addEventListener('change',e=>{d.role=e.target.value;card()});
+    sh.querySelectorAll('[data-ppick]').forEach(b=>b.onclick=()=>{d.name=b.dataset.ppick;draw()});
+    sh.querySelectorAll('[data-ps]').forEach(b=>b.onclick=()=>{const[x,v]=b.dataset.ps.split(':');d[x]=Math.max(0,d[x]+ +v);draw()});
+    $('pp-ok').onclick=()=>{d.name=d.name.trim();if(!d.name){toast('投手名を入力してください');return}
+      if(isNew){G.pitch.push(d);G.cp=G.pitch.length-1}else G.pitch[k]=d;closeSheet();render()};
+    if($('pp-del'))$('pp-del').onclick=function(){if(!this.dataset.armed){this.dataset.armed='1';this.textContent='本当に削除';return}
+      G.pitch.splice(k,1);G.cp=Math.max(0,Math.min(G.cp,G.pitch.length-1));undo=[];closeSheet();render()};
+  };draw();
+}
+
+function renderSeason(){
+  ['all','公式','OP'].forEach((k,j)=>$(['sf-all','sf-off','sf-op'][j]).setAttribute('aria-pressed',SF===k));
+  $('ssNote').textContent=SEASON?`${G.game.team}・${sfLabel()}（${SEASON.from}〜${SEASON.asof}）`:'データなし';
+  let h=`<thead><tr><th class="l">打順・選手</th><th>試合</th><th>打席</th><th>打率</th><th>出塁率</th><th>長打率</th><th>OPS</th><th>本塁打</th><th>打点</th><th>盗塁</th><th>三振率</th><th>今日</th><th>今日込</th></tr></thead><tbody>`;
+  people().forEach(pl=>{const r=pl.r,z=seasonOf(pl.name,G.game.team),t=todayP(pl.name),R=rates(z),C=rates(addZ(z,t));
+    const today=t.pa?`${t.ab}-${t.h}${t.rbi?' '+t.rbi+'点':''}`:'–';
+    h+=z?`<tr><td class="l"><b>${r+1}</b>${esc(pl.name)}${pl.type!=='先発'?`<small class="muted"> ${pl.type}</small>`:''}</td><td>${z.g}</td><td>${z.pa}</td><td class="hi">${f3(R.avg)}</td><td>${f3(R.obp)}</td><td>${f3(R.slg)}</td><td>${f3(R.ops)}</td><td>${z.hr}</td><td>${z.rbi}</td><td>${z.sb}</td><td>${R.kp.toFixed(1)}%</td><td class="td">${today}</td><td>${f3(C.avg)}</td></tr>`
+      :`<tr class="none"><td class="l"><b>${r+1}</b>${esc(pl.name)}${pl.type!=='先発'?`<small class="muted"> ${pl.type}</small>`:''}</td><td colspan="10" style="text-align:left">${pl.name?sfLabel()+'の記録なし':''}</td><td class="td">${today}</td><td>${t.ab?f3(C.avg):'–'}</td></tr>`});
+  $('ss').innerHTML=h+'</tbody>';
+  let p=`<thead><tr><th class="l">投手</th><th>登板</th><th>投球回</th><th>防御率</th><th>WHIP</th><th>奪三振率</th><th>与四球率</th><th>今日</th><th>今日込防御率</th></tr></thead><tbody>`;
+  G.pitch.forEach(x=>{const z=pSeason(x.name,G.game.team),R=prates(z),C=prates(pAdd(z,x));const t=`${ipStr(x.outs)}回 ${x.r}失 ${x.k}K`;
+    p+=z?`<tr><td class="l">${esc(x.name)}</td><td>${z.g}</td><td>${ipStr(z.outs)}</td><td class="hi">${f2(R.era)}</td><td>${R.whip!=null?R.whip.toFixed(2):'–'}</td><td>${f2(R.k9)}</td><td>${f2(R.bb9)}</td><td class="td">${t}</td><td>${x.outs?f2(C.era):'–'}</td></tr>`
+      :`<tr class="none"><td class="l">${esc(x.name)}</td><td colspan="6" style="text-align:left">${sfLabel()}の登板記録なし</td><td class="td">${t}</td><td>${x.outs?f2(C.era):'–'}</td></tr>`});
+  if(!G.pitch.length)p+=`<tr class="none"><td class="l" colspan="9">今日の投手を追加すると、ここにシーズン成績が並びます</td></tr>`;
+  $('ps').innerHTML=p+'</tbody>';
+}
+document.querySelector('.seg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;SF=b.dataset.sf;try{localStorage.setItem(KEY+'-sf',SF)}catch(x){}render()});
+
+// ---- sheet
+const ov=$('ov'),sh=$('sheet');
+function openSheet(html){sh.innerHTML=html;ov.hidden=false}
+function closeSheet(){ov.hidden=true;sh.innerHTML=''}
+ov.addEventListener('click',e=>{if(e.target===ov)closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!ov.hidden)closeSheet()});
+let S=null;
+function openPA(r,i,idx){
+  const l=G.pa[r+'-'+i]||[];if(idx==null)idx=l.length?0:-1;
+  S={r,i,idx,d:idx>=0?clone(l[idx]):{r:'',f:0,base:0,rbi:0,sb:0,sq:''}};S.d.sq=S.d.sq||'';S.d.cs=S.d.cs||0;S.d.who=S.d.who||batterAt(r,i);S.d.rn=S.d.rn||runnerAt(r,i,S.d.who);drawPA();
+}
+function drawPA(){
+  const {r,i,idx,d}=S,l=G.pa[r+'-'+i]||[],pl=G.players[r],R=RES[d.r];
+  const chips=l.map((p,k)=>`<button class="chip" data-chip="${k}" aria-pressed="${k===idx}">${k+1}打席目 ${esc(label(p))}</button>`).join('')+(l.length?`<button class="chip" data-chip="-1" aria-pressed="${idx<0}">＋ 打席を追加</button>`:'');
+  openSheet(`<div class="sh-h"><h3>${i}回 · ${r+1}番 ${esc(d.who)||''}</h3><button class="x" data-act="close" aria-label="閉じる">×</button></div>
+  ${l.length?`<div class="chips">${chips}</div>`:''}
+  ${slotP(r).length>1?`<div class="row2"><div><div class="grp-l">打者</div><div class="chips">${[...new Set(slotP(r).map(e=>e.name).filter(Boolean))].map(n=>`<button class="chip" data-who="${esc(n)}" aria-pressed="${n===d.who}">${esc(n)}</button>`).join('')}</div></div>
+    <div><div class="grp-l">走者（得点・盗塁）</div><div class="chips">${[...new Set(slotP(r).map(e=>e.name).filter(Boolean))].map(n=>`<button class="chip" data-rn="${esc(n)}" aria-pressed="${n===d.rn}">${esc(n)}</button>`).join('')}</div></div></div>`:''}
+  <div class="preview">${d.r?diamond(d,34):''}<span class="lb">${d.r?esc(label(d)):'結果を選んでください'}</span></div>
+  <div><div class="grp-l">投球（1球ずつ）　${sqCount(d.sq)}</div>
+    <div class="pitchrow" style="margin-top:0"><button class="st" data-sq="S">ストライク</button><button class="st" data-sq="F">ファウル</button><button class="bl" data-sq="B">ボール</button></div>
+    <div class="chips" style="margin-top:6px;align-items:center">${d.sq?[...d.sq].map(c=>`<span class="sqc ${c}">${SQL[c]}</span>`).join(''):'<span class="muted">球数を付けない場合は空のままでOK</span>'}${d.sq?'<button class="chip" data-sq="-">1球消す</button>':''}</div></div>
+  <div><div class="grp-l">結果</div><div class="opts">${Object.entries(RES).map(([k,v])=>`<button class="opt" data-res="${k}" aria-pressed="${d.r===k}">${v.l}</button>`).join('')}</div></div>
+  <div><div class="grp-l">打球方向・守備位置</div><div class="opts nine">${POS.slice(1).map((p,k)=>`<button class="opt" data-f="${k+1}" aria-pressed="${d.f===k+1}" ${R&&!R.F?'disabled':''}>${p}<small>${k+1}</small></button>`).join('')}</div></div>
+  <div><div class="grp-l">最終到達（本塁＝得点）</div><div class="opts five">${['アウト','一塁','二塁','三塁','本塁'].map((t,k)=>`<button class="opt" data-base="${k}" aria-pressed="${d.base===k}">${t}</button>`).join('')}</div></div>
+  <div class="row2" style="grid-template-columns:repeat(3,1fr);gap:8px">
+    <div><div class="grp-l">打点</div><div class="step"><button data-st="rbi:-1" aria-label="打点を減らす">−</button><output>${d.rbi}</output><button data-st="rbi:1" aria-label="打点を増やす">＋</button></div></div>
+    <div><div class="grp-l">盗塁</div><div class="step"><button data-st="sb:-1" aria-label="盗塁を減らす">−</button><output>${d.sb}</output><button data-st="sb:1" aria-label="盗塁を増やす">＋</button></div></div>
+    <div><div class="grp-l">盗塁死</div><div class="step"><button data-st="cs:-1" aria-label="盗塁死を減らす">−</button><output>${d.cs}</output><button data-st="cs:1" aria-label="盗塁死を増やす">＋</button></div></div>
+  </div>
+  <div class="acts">${idx>=0?'<button class="btn warn" data-act="del">この打席を削除</button>':''}<button class="btn pri" data-act="ok" ${d.r?'':'disabled'}>記録する</button></div>`);
+}
+sh.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const a=b.dataset;
+  if(a.act==='close')return closeSheet();
+  if(!S)return;const d=S.d;
+  if(a.chip!=null){const k=+a.chip,l=G.pa[S.r+'-'+S.i]||[];S.idx=k;S.d=k>=0?clone(l[k]):{r:'',f:0,base:0,rbi:0,sb:0,sq:''};S.d.sq=S.d.sq||'';S.d.cs=S.d.cs||0;S.d.who=S.d.who||batterAt(S.r,S.i);S.d.rn=S.d.rn||runnerAt(S.r,S.i,S.d.who);return drawPA()}
+  if(a.res){const R=RES[a.res];d.r=a.res;d.base=R.base||0;if(!R.F)d.f=0;if(a.res==='HR'&&d.rbi<1)d.rbi=1;if(a.res==='SF'&&d.rbi<1)d.rbi=1;return drawPA()}
+  if(a.who){const same=d.rn===d.who;d.who=a.who;if(same)d.rn=a.who;return drawPA()}
+  if(a.rn){d.rn=a.rn;return drawPA()}
+  if(a.f){d.f=d.f===+a.f?0:+a.f;return drawPA()}
+  if(a.sq){if(a.sq==='-')d.sq=d.sq.slice(0,-1);else{d.sq+=a.sq;const c=cnt(d.sq);if(!d.r&&c.s>=3&&a.sq==='S'){d.r='K';d.base=0}if(!d.r&&c.b>=4){d.r='BB';d.base=1}}return drawPA()}
+  if(a.base!=null){d.base=+a.base;return drawPA()}
+  if(a.st){const[k,v]=a.st.split(':');d[k]=Math.max(0,Math.min(k==='rbi'?4:3,(d[k]||0)+ +v));if(k==='cs'&&+v>0&&d.base===4)d.base=0;return drawPA()}
+  const key=S.r+'-'+S.i;
+  if(a.act==='ok'){const l=G.pa[key]||(G.pa[key]=[]);if(S.idx>=0)l[S.idx]=d;else l.push(d);closeSheet();render()}
+  if(a.act==='del'){const l=G.pa[key];l.splice(S.idx,1);if(!l.length)delete G.pa[key];closeSheet();render()}
+});
+
+function openPlayer(r,sel){
+  const pl=G.players[r],h=slotP(r);S=null;if(sel==null)sel=h.length-1;const e=h[sel];
+  const maxInn=()=>{let m=1;for(const k in G.pa){const i=+k.split('-')[1];if(i>m)m=i}return m};
+  const POSL=['','投','捕','一','二','三','遊','左','中','右','DH'];
+  openSheet(`<div class="sh-h"><h3>${r+1}番打者</h3><button class="x" data-act="close" aria-label="閉じる">×</button></div>
+  <div><div class="grp-l">この打順の選手</div><div class="chips">${h.map((x,k)=>`<button class="chip" data-hs="${k}" aria-pressed="${k===sel}">${k?x.type+' '+x.inn+'回 ':'先発 '}${esc(x.name)||'（未入力）'}</button>`).join('')}<button class="chip" data-hs="new">＋ 選手交代</button></div></div>
+  ${sel>0?`<div class="row2"><label class="f">交代の種類<select id="pl-type">${SUBT.map(t=>`<option ${t===e.type?'selected':''}>${t}</option>`).join('')}</select></label>
+    <label class="f">何回から<select id="pl-inn">${Array.from({length:G.innings},(_,k)=>`<option value="${k+1}" ${k+1===e.inn?'selected':''}>${k+1}回</option>`).join('')}</select></label></div>
+    <p class="muted" style="margin:0" id="pl-help"></p>`:''}
+  <div class="row2"><label class="f">選手名<input id="pl-name" value="${esc(e.name)}" placeholder="例：園崎"></label>
+  <label class="f">守備<select id="pl-pos">${POSL.map(x=>`<option ${x===e.pos?'selected':''} value="${x}">${x||'—'}</option>`).join('')}</select></label></div>
+  <div><div class="grp-l">${esc(G.game.team)}の選手から選ぶ</div><div class="roster">${roster(G.game.team).map(n=>`<button class="chip" data-pick="${esc(n)}" aria-pressed="${n===normName(e.name)}">${esc(n)}</button>`).join('')}</div></div>
+  <div id="pl-card"></div>
+  <div class="acts">${sel>0?'<button class="btn warn" id="pl-dsub">この交代を取り消す</button>':r>=9?'<button class="btn warn" id="pl-del">この打順を削除</button>':''}<button class="btn pri" id="pl-ok">決定</button></div>`);
+  const help=()=>{const el=$('pl-help');if(!el)return;const t=$('pl-type').value,i=$('pl-inn').value;
+    el.textContent=t==='代打'?`${i}回の打席から打者になります。`:t==='代走'?`${i}回はこの選手が走者（得点・盗塁）、${+i+1}回以降は打者として記録します。`:`${i}回から守備に入り、以降の打席はこの選手になります。`};
+  const card=()=>{const n=$('pl-name').value,z=seasonOf(n,G.game.team),t=todayP(n),R=rates(z),vs=G.game.opp?seasonOf(n,G.game.team,'all',G.game.opp):null;
+    $('pl-card').innerHTML=!n?'':z?`<div class="card"><div class="grp-l" style="margin:0">シーズン（${sfLabel()}） ${z.g}試合 ${z.pa}打席</div>
+      <div class="kv"><div><span>打率</span><b>${f3(R.avg)}</b></div><div><span>出塁率</span><b>${f3(R.obp)}</b></div><div><span>OPS</span><b>${f3(R.ops)}</b></div><div><span>三振率</span><b>${R.kp.toFixed(1)}%</b></div>
+      <div><span>安打</span><b>${z.h}</b></div><div><span>本塁打</span><b>${z.hr}</b></div><div><span>打点</span><b>${z.rbi}</b></div><div><span>盗塁(死)</span><b>${z.sb}<small class="muted">(${z.cs})</small></b></div></div>
+      <div class="muted">今日 ${t.pa?`${t.ab}打数${t.h}安打 ${t.rbi}打点`:'まだ打席なし'}${vs?` ／ 対${esc(oppBase(G.game.opp))} 通算 ${vs.ab}打数${vs.h}安打（${f3(rates(vs).avg)}）`:''}</div></div>`
+      :`<p class="muted" style="margin:0">${esc(G.game.team)}・${sfLabel()}の記録はまだありません。</p>`};
+  card();help();$('pl-name').addEventListener('input',card);
+  if($('pl-type')){$('pl-type').addEventListener('change',help);$('pl-inn').addEventListener('change',help)}
+  sh.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{$('pl-name').value=b.dataset.pick;sh.querySelectorAll('[data-pick]').forEach(x=>x.setAttribute('aria-pressed',x===b));card()});
+  const save=()=>{e.name=normName($('pl-name').value);e.pos=$('pl-pos').value;if($('pl-type')){e.type=$('pl-type').value;e.inn=+$('pl-inn').value}
+    for(const k in G.pa){const[a,i]=k.split('-').map(Number);if(a===r)G.pa[k].forEach(p=>{delete p.who;delete p.rn})}};
+  sh.querySelectorAll('[data-hs]').forEach(b=>b.onclick=()=>{save();
+    if(b.dataset.hs==='new'){h.push({name:'',pos:e.pos,type:'代打',inn:maxInn()});syncCur(pl);openPlayer(r,h.length-1)}else openPlayer(r,+b.dataset.hs)});
+  $('pl-ok').onclick=()=>{save();h.sort((x,y)=>x.type==='先発'?-1:y.type==='先発'?1:x.inn-y.inn);syncCur(pl);closeSheet();render()};
+  if($('pl-dsub'))$('pl-dsub').onclick=()=>{h.splice(sel,1);syncCur(pl);for(const k in G.pa){const[a]=k.split('-').map(Number);if(a===r)G.pa[k].forEach(p=>{delete p.who;delete p.rn})}closeSheet();render()};
+  if($('pl-del'))$('pl-del').onclick=()=>{G.players.splice(r,1);const np={};for(const k in G.pa){const[a,i]=k.split('-').map(Number);if(a<r)np[k]=G.pa[k];else if(a>r)np[(a-1)+'-'+i]=G.pa[k]}G.pa=np;closeSheet();render()};
+}
+
+$('grid').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.pl!=null)openPlayer(+b.dataset.pl);else openPA(+b.dataset.r,+b.dataset.i)});
+$('line').addEventListener('change',e=>{const t=e.target;if(t.dataset.oi!=null){const v=t.value.replace(/[^0-9]/g,'');G.opp[+t.dataset.oi]=v===''?'':+v;render()}});
+['date','opp','team','kind','side'].forEach(k=>$('m-'+k).addEventListener('change',e=>{G.game[k]=e.target.value;if(G.sample&&k==='opp')G.sample=false;render()}));
+$('addInn').onclick=()=>{G.innings++;render()};
+$('addBat').onclick=()=>{G.players.push({name:'',pos:''});render();openPlayer(G.players.length-1)};
+
+// ---- toast
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,1800)}
+
+// ---- save / list / new
+const gkey=g=>`${g.game.date}|${g.game.opp}|${g.game.team}`;
+function score(g){let e=0,o=0;for(const k in g.pa)g.pa[k].forEach(p=>{if(p.base===4)e++});(g.opp||[]).forEach(v=>o+=+v||0);return[e,o]}
+$('bSave').onclick=()=>{if(!G.game.opp){toast('対戦相手を入力してください');$('m-opp').focus();return}
+  G.sample=false;store.saved[gkey(G)]=clone(G);render();toast('保存しました')};
+function drawList(){
+  const items=Object.entries(store.saved).sort((a,b)=>b[0].localeCompare(a[0]));
+  openSheet(`<div class="sh-h"><h3>保存した試合</h3><button class="x" data-act="close" aria-label="閉じる">×</button></div>
+  <div class="gl">${items.length?items.map(([k,g])=>{const[e,o]=score(g);const res=e>o?'勝':e<o?'負':'分';
+    return `<div class="gi"><div class="t"><b>vs ${esc(g.game.opp)}</b><span>${esc(g.game.date)} · ${esc(g.game.team)} · ${esc(g.game.kind)}</span></div><span class="sc">${e}-${o} ${res}</span><button class="btn" data-load="${esc(k)}">開く</button><button class="btn warn" data-delg="${esc(k)}">削除</button></div>`}).join(''):'<p class="muted">まだ保存した試合はありません。「試合を保存」で日付・相手・チームごとに残せます。</p>'}</div>`);
+}
+$('bList').onclick=()=>{S=null;drawList()};
+sh.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.load){store.cur=G=fix(clone(store.saved[b.dataset.load]));closeSheet();render();toast('読み込みました')}
+  if(b.dataset.delg){if(b.dataset.armed){delete store.saved[b.dataset.delg];persist();drawList();toast('削除しました')}else{b.dataset.armed='1';b.textContent='本当に削除'}}
+});
+$('bNew').onclick=function(){
+  if(!this.dataset.armed){this.dataset.armed='1';this.textContent='打順を残して新規';setTimeout(()=>{delete this.dataset.armed;this.textContent='新しい試合'},3000);return}
+  delete this.dataset.armed;this.textContent='新しい試合';
+  const keep=G.players.map((p,r)=>{const h=slotP(r)[0];return{name:h.name,pos:h.pos}});const team=G.game.team,kind=G.game.kind;
+  store.cur=G=blank(keep);G.game.team=team;G.game.kind=kind;render();toast('新しい試合を始めました');window.scrollTo({top:0});
+};
+
+// ---- CSV
+function csv(){
+  const head=['日付','相手','チーム','区分','打順','選手','守備','打席','打数','安打','二塁打','三塁打','本塁打','打点','得点','四球','死球','三振','犠打','犠飛','盗塁','盗塁死','見た球数','ファウル'];
+  const rows=[head.join(',')];
+  people().forEach(p=>{const r=p.r,s=personStat(p.name);if(!s.any)return;
+    rows.push([G.game.date,G.game.opp,G.game.team,G.game.kind,r+1+(p.type!=='先発'?p.type:''),p.name,p.pos,s.pa,s.ab,s.h,s.d,s.t,s.hr,s.rbi,s.run,s.bb,s.hbp,s.so,s.sh,s.sf,s.sb,s.cs,s.np,s.fl].map(v=>/[,"]/.test(String(v))?`"${String(v).replace(/"/g,'""')}"`:v).join(','))});
+  if(G.pitch.length){rows.push('');rows.push(['日付','相手','チーム','区分','投手','役割','投球回','投球数','ストライク','うちファウル','ボール','ストライク率','被安打','被本塁打','四球','死球','奪三振','失点','自責点'].join(','));
+    G.pitch.forEach(p=>rows.push([G.game.date,G.game.opp,G.game.team,G.game.kind,p.name,p.role,ipStr(p.outs),p.np,p.st,p.fl,p.bl,pct(p.st,p.st+p.bl),p.ha,p.hr,p.bb,p.hbp,p.k,p.r,p.er].join(',')))}
+  return rows.join('\n');
+}
+// ---- eagles.html 用データ（GAME_RECORDS / SB_LOG と同じ書式）
+const ARR={'ジュニア':['GAME_RECORDS','SB_LOG'],'レギュラー':['REG_GAME_RECORDS','REG_SB_LOG'],'スーパージュニア':['SJ_GAME_RECORDS','SJ_SB_LOG']};
+const appDate=d=>{const[y,m,dd]=d.split('-').map(Number);return{s:`${y}/${m}/${dd}`,m}};
+const q=s=>JSON.stringify(String(s));
+function appRecords(){const{s,m}=appDate(G.game.date);const g=G.game;
+  return people().map(p=>{const t=personStat(p.name);if(!t.any)return'';
+    return `  {opponent:${q(g.opp)},player:${q(normName(p.name))},team:${q(g.team)},gameType:${q(g.kind)},date:${q(s)},month:${m},pa:${t.pa},ab:${t.ab},h:${t.h},single:${t.h-t.d-t.t-t.hr},d2:${t.d},d3:${t.t},hr:${t.hr},bb:${t.bb},hbp:${t.hbp},sf:${t.sf},sh:${t.sh},k:${t.so},rbi:${t.rbi},r:${t.run}},`}).filter(Boolean).join('\n')}
+function appSB(){const g=G.game,out=[];
+  G.players.forEach((p,r)=>{for(let i=1;i<=G.innings;i++)(G.pa[r+'-'+i]||[]).forEach(x=>{const rn=normName(rnOf(x,r,i));if((x.sb||x.cs)&&rn)out.push(`  {opponent:${q(g.opp)},player:${q(rn)},sb:${x.sb||0},cs:${x.cs||0},note:"${i}回",gameType:${q(g.kind)},team:${q(g.team)}},`)})});
+  return out.join('\n')}
+const PSUF={'ジュニア':'','レギュラー':'_REG','スーパージュニア':'_SJ'};
+function pitchLog(){const g=G.game,[y,m,dd]=g.date.split('-').map(Number);
+  return G.pitch.filter(p=>p.name).map(p=>`  {date:"${m}/${dd}",opponent:${q(g.opp)},name:${q(p.name)},role:${q(p.role)},gtype:${q(g.kind)},outs:${p.outs}, ip:"${ipStr(p.outs)}",ha:${p.ha},r:${p.r},er:${p.er},bb:${p.bb},hbp:${p.hbp},k:${p.k},hr:${p.hr}},`).join('\n')}
+function pitchAgg(f){return G.pitch.filter(p=>p.name).map(p=>{const z=pAdd(pSeason(p.name,G.game.team,f),p),R=prates(z),r2=(v,d)=>v==null?0:+v.toFixed(d);
+  return `  {name:${q(p.name)},g:${z.g},gs:${z.gs},gf:${z.gf},outs:${z.outs},ip:"${ipStr(z.outs)}",ha:${z.ha},r:${z.r},er:${z.er},bb:${z.bb},hbp:${z.hbp},k:${z.k},hr:${z.hr},era:${r2(R.era,2)},whip:${r2(R.whip,3)},k9:${r2(R.k9,2)},bb9:${r2(R.bb9,2)}},`}).join('\n')}
+$('bCsv').onclick=()=>{S=null;const g=G.game,[ga,sa]=ARR[g.team],{s}=appDate(g.date);
+  const dup=SR.some(r=>r.team===g.team&&r.date===s&&oppBase(r.opponent)===oppBase(g.opp));
+  const missing=G.players.some((p,r)=>!p.name&&pasOf(r).length);
+  const rec=appRecords(),sb=appSB();
+  openSheet(`<div class="sh-h"><h3>アプリへ送るデータ</h3><button class="x" data-act="close" aria-label="閉じる">×</button></div>
+  ${!g.opp?'<div class="warnbox">対戦相手が未入力です。入力してから送ってください。</div>':''}
+  ${dup?'<div class="warnbox">この試合（日付・相手・チーム）はすでにアプリに登録されています。二重登録に注意してください。</div>':''}
+  ${missing?'<div class="warnbox">名前のない打順に記録があります。その行は出力されません。</div>':''}
+  <div class="exp"><div class="shd"><div class="grp-l">打撃成績 → <b>${ga}</b> の末尾へ</div><button class="btn" data-copy="ex1">コピー</button></div><textarea id="ex1" readonly>${esc(rec)}</textarea></div>
+  <div class="exp"><div class="shd"><div class="grp-l">盗塁・盗塁死 → <b>${sa}</b> の末尾へ</div><button class="btn" data-copy="ex2">コピー</button></div><textarea id="ex2" readonly>${esc(sb||'// この試合の盗塁・盗塁死はありません')}</textarea></div>
+  ${G.pitch.length?`${g.team==='ジュニア'?`<div class="exp"><div class="shd"><div class="grp-l">投手（試合ログ） → <b>PITCH_LOG</b> の末尾へ</div><button class="btn" data-copy="ex4">コピー</button></div><textarea id="ex4" readonly>${esc(pitchLog())}</textarea></div>`:''}
+  <div class="exp"><div class="shd"><div class="grp-l">投手（通算） → <b>PITCH_STATS${PSUF[g.team]}</b> の同じ名前の行と置き換え</div><button class="btn" data-copy="ex5">コピー</button></div><textarea id="ex5" readonly>${esc(pitchAgg('all'))}</textarea></div>
+  <div class="exp"><div class="shd"><div class="grp-l">投手（${g.kind}） → <b>PITCH_STATS${PSUF[g.team]}${g.kind==='OP'?'_OP':'_OFFICIAL'}</b> の同じ名前の行と置き換え</div><button class="btn" data-copy="ex6">コピー</button></div><textarea id="ex6" readonly>${esc(pitchAgg(g.kind))}</textarea></div>
+  <p class="muted" style="margin:0">投手の通算行は、取り込み済みのシーズン成績にこの試合を足した値です。新しい投手は配列の末尾に追加してください。先発・救援別の表は更新されません。</p>`:''}
+  <div class="exp"><div class="shd"><div class="grp-l">CSV（表計算用）</div><button class="btn" data-copy="ex3">コピー</button></div><textarea id="ex3" readonly>${esc(csv())}</textarea></div>`);
+};
+sh.addEventListener('click',e=>{const b=e.target.closest('[data-copy]');if(!b)return;const ta=$(b.dataset.copy);
+  const sel=()=>{ta.focus();ta.select();toast('選択しました。長押しでコピーしてください')};
+  try{navigator.clipboard.writeText(ta.value).then(()=>toast('コピーしました'),sel)}catch(x){sel()}});
+
+render();
+</script>
+
+</body>
+</html>
