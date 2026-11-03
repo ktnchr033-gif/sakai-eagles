@@ -191,6 +191,7 @@ textarea{width:100%;min-height:150px;font:12px/1.4 ui-monospace,Menlo,monospace;
 .nxb{font-size:.6rem;color:var(--accent-ink);background:var(--accent);border-radius:3px;padding:0 4px;font-weight:700;white-space:nowrap}
 .dsum{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:.8rem;color:var(--muted)}
 .dsum b{color:var(--ink);font-size:1.05rem;margin-left:4px;font-variant-numeric:tabular-nums}
+.opt.ro[aria-pressed="true"]{background:var(--run);border-color:var(--run);color:#fff}
 .pa .sqn{display:block;font-size:.6rem;color:var(--muted)}
 .hint{font-size:.72rem;color:var(--muted);margin:6px 0 0}
 .padh{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;gap:8px;flex-wrap:wrap}
@@ -385,7 +386,9 @@ function diamond(p,size=22){
   let seg='';if(b>0)seg='M'+pts.slice(0,b+1).map(q=>q.join(',')).join(' L');
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true">
   <polygon points="12,22 22,12 12,2 2,12" fill="${b===4?'var(--run)':'none'}" fill-opacity="${b===4?.85:0}" stroke="var(--rule)" stroke-width="1"/>
-  ${b>0&&b<4?`<path d="${seg}" fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`:''}</svg>`}
+  ${b>0&&b<4?`<path d="${seg}" fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`:''}
+  ${p.roAt?(()=>{const[x,y]=pts[p.roAt];return `<path d="M${x-3.2},${y-3.2} L${x+3.2},${y+3.2} M${x+3.2},${y-3.2} L${x-3.2},${y+3.2}" stroke="var(--run)" stroke-width="2.4" stroke-linecap="round"/>`})():''}</svg>`}
+const RO_L=['','牽制死','二塁走死','三塁走死','本塁走死'];
 
 function render(){
   $('m-date').value=G.game.date;$('m-opp').value=G.game.opp;$('m-team').value=G.game.team;$('m-kind').value=G.game.kind;$('m-side').value=G.game.side;
@@ -406,7 +409,7 @@ function render(){
   G.players.forEach((pl,r)=>{
     h+=`<tr><td class="nm"><button data-pl="${r}" aria-label="${r+1}番 選手を編集"><span class="no">${r+1}</span><span class="pos">${esc(pl.pos)||'守備–'}${nxB.r===r?' <b class="nxb">次の打者</b>':''}</span><span class="pn">${esc(pl.name)||'（未入力）'}</span>${slotP(r).length>1?`<span class="sv subl">${slotP(r).slice(1).map(e=>e.type+e.inn+'回').join('・')}</span>`:''}<span class="sv">${(()=>{const z=seasonOf(pl.name,G.game.team),t=todayP(pl.name);const a=z?`<b>${f3(rates(z).avg)}</b>`:(pl.name?'記録なし':'');return a+(t.pa?` · ${t.ab}-${t.h}`:'')})()}</span></button></td>`;
     for(let i=1;i<=n;i++){const l=G.pa[r+'-'+i]||[];
-      h+=`<td class="c${nxB.r===r&&nxB.i===i?' nx':''}"><button data-r="${r}" data-i="${i}" aria-label="${r+1}番 ${i}回">${l.length?l.map(p=>`<div class="pa">${diamond(p)}<div><span class="lb${RES[p.r].hit?' hit':''}">${esc(label(p))}</span>${p.rbi||p.sb||p.cs||p.ro?`<span class="rb">${'●'.repeat(p.rbi||0)}${p.sb?' 盗'+(p.sb>1?p.sb:''):''}${p.cs?' 盗死':''}${p.ro?' 走死':''}</span>`:''}${p.sq?`<span class="sqn">${p.sq.length}球</span>`:''}${p.risp||handOf(p,i)==='L'?`<span class="mk">${p.risp?'<b>圏</b>':''}${handOf(p,i)==='L'?'<i>左</i>':''}</span>`:''}${slotP(r).length>1?`<span class="sqn">${esc(whoOf(p,r,i))}${rnOf(p,r,i)!==whoOf(p,r,i)?' 走'+esc(rnOf(p,r,i)):''}</span>`:''}</div></div>`).join(''):'<span class="empty">·</span>'}</button></td>`}
+      h+=`<td class="c${nxB.r===r&&nxB.i===i?' nx':''}"><button data-r="${r}" data-i="${i}" aria-label="${r+1}番 ${i}回">${l.length?l.map(p=>`<div class="pa">${diamond(p)}<div><span class="lb${RES[p.r].hit?' hit':''}">${esc(label(p))}</span>${p.rbi||p.sb||p.cs||p.ro?`<span class="rb">${'●'.repeat(p.rbi||0)}${p.sb?' 盗'+(p.sb>1?p.sb:''):''}${p.cs?' 盗死':''}${p.ro?' '+(RO_L[p.roAt]||'走死'):''}</span>`:''}${p.sq?`<span class="sqn">${p.sq.length}球</span>`:''}${p.risp||handOf(p,i)==='L'?`<span class="mk">${p.risp?'<b>圏</b>':''}${handOf(p,i)==='L'?'<i>左</i>':''}</span>`:''}${slotP(r).length>1?`<span class="sqn">${esc(whoOf(p,r,i))}${rnOf(p,r,i)!==whoOf(p,r,i)?' 走'+esc(rnOf(p,r,i)):''}</span>`:''}</div></div>`).join(''):'<span class="empty">·</span>'}</button></td>`}
     const s=stat(pasOf(r));tot.push(s);
     h+=`<td class="s sep">${s.ab}</td><td class="s">${s.h}</td><td class="s">${s.rbi}</td><td class="s">${s.run}</td><td class="s">${s.bb+s.hbp}</td><td class="s">${s.so}</td><td class="s">${s.sb}</td><td class="s">${s.cs}</td><td class="s">${s.ro}</td><td class="s">${s.np||'–'}</td></tr>`});
   const T=tot.reduce((a,s)=>{for(const k in s)a[k]=(a[k]||0)+s[k];return a},{});
@@ -580,12 +583,13 @@ function drawPA(){
     <div class="chips" style="margin-top:6px;align-items:center">${d.sq?[...d.sq].map(c=>`<span class="sqc ${c}">${SQL[c]}</span>`).join(''):'<span class="muted">球数を付けない場合は空のままでOK</span>'}${d.sq?'<button class="chip" data-sq="-">1球消す</button>':''}</div></div>
   <div><div class="grp-l">結果</div><div class="opts">${Object.entries(RES).map(([k,v])=>`<button class="opt" data-res="${k}" aria-pressed="${d.r===k}">${v.l}</button>`).join('')}</div></div>
   <div><div class="grp-l">打球方向・守備位置</div><div class="opts nine">${POS.slice(1).map((p,k)=>`<button class="opt" data-f="${k+1}" aria-pressed="${d.f===k+1}" ${R&&!R.F?'disabled':''}>${p}<small>${k+1}</small></button>`).join('')}</div></div>
-  <div><div class="grp-l">最終到達（本塁＝得点）</div><div class="opts five">${['アウト','一塁','二塁','三塁','本塁'].map((t,k)=>`<button class="opt" data-base="${k}" aria-pressed="${d.base===k}">${t}</button>`).join('')}</div></div>
+  <div><div class="grp-l">最終到達（本塁＝得点）</div><div class="opts five">${['アウト','一塁','二塁','三塁','本塁'].map((t,k)=>`<button class="opt" data-base="${k}" aria-pressed="${!d.roAt&&d.base===k}">${t}</button>`).join('')}</div>
+    <div class="grp-l" style="margin-top:8px">走者として出たあとアウト（走塁死）</div><div class="opts">${[1,2,3,4].map(k=>`<button class="opt ro" data-roat="${k}" aria-pressed="${d.roAt===k}">${['','一塁で<small>牽制死など</small>','二塁で<small>走塁死</small>','三塁で<small>走塁死</small>','本塁で<small>走塁死</small>'][k]}</button>`).join('')}</div></div>
   <div class="row2" style="gap:10px 14px">
     <div><div class="grp-l">打点</div><div class="step"><button data-st="rbi:-1" aria-label="打点を減らす">−</button><output>${d.rbi}</output><button data-st="rbi:1" aria-label="打点を増やす">＋</button></div></div>
     <div><div class="grp-l">盗塁</div><div class="step"><button data-st="sb:-1" aria-label="盗塁を減らす">−</button><output>${d.sb}</output><button data-st="sb:1" aria-label="盗塁を増やす">＋</button></div></div>
     <div><div class="grp-l">盗塁死</div><div class="step"><button data-st="cs:-1" aria-label="盗塁死を減らす">−</button><output>${d.cs}</output><button data-st="cs:1" aria-label="盗塁死を増やす">＋</button></div></div>
-    <div><div class="grp-l">走塁死（牽制死など）</div><div class="step"><button data-st="ro:-1" aria-label="走塁死を減らす">−</button><output>${d.ro}</output><button data-st="ro:1" aria-label="走塁死を増やす">＋</button></div></div>
+
   </div>
   <div class="acts">${idx>=0?'<button class="btn warn" data-act="del">この打席を削除</button>':''}<button class="btn pri" data-act="ok" ${d.r?'':'disabled'}>記録する</button></div>`);
 }
@@ -594,14 +598,15 @@ sh.addEventListener('click',e=>{
   if(a.act==='close')return closeSheet();
   if(!S)return;const d=S.d;
   if(a.chip!=null){const k=+a.chip,l=G.pa[S.r+'-'+S.i]||[];S.idx=k;S.d=k>=0?clone(l[k]):{r:'',f:0,base:0,rbi:0,sb:0,sq:''};S.d.sq=S.d.sq||'';S.d.cs=S.d.cs||0;S.d.ro=S.d.ro||0;S.d.who=S.d.who||batterAt(S.r,S.i);S.d.rn=S.d.rn||runnerAt(S.r,S.i,S.d.who);return drawPA()}
-  if(a.res){const R=RES[a.res];d.r=a.res;d.base=R.base||0;if(!R.F)d.f=0;if(a.res==='HR'&&d.rbi<1)d.rbi=1;if(a.res==='SF'&&d.rbi<1)d.rbi=1;return drawPA()}
+  if(a.res){const R=RES[a.res];d.r=a.res;d.base=R.base||0;delete d.roAt;d.ro=0;if(!R.F)d.f=0;if(a.res==='HR'&&d.rbi<1)d.rbi=1;if(a.res==='SF'&&d.rbi<1)d.rbi=1;return drawPA()}
   if(a.who){const same=d.rn===d.who;d.who=a.who;if(same)d.rn=a.who;return drawPA()}
   if(a.rn){d.rn=a.rn;return drawPA()}
   if(a.hd){d.h=a.hd===(G.oh[S.i-1]||'R')?undefined:a.hd;if(!d.h)delete d.h;return drawPA()}
   if(a.rp){d.risp=!d.risp;if(!d.risp)delete d.risp;return drawPA()}
   if(a.f){d.f=d.f===+a.f?0:+a.f;return drawPA()}
   if(a.sq){if(a.sq==='-')d.sq=d.sq.slice(0,-1);else{d.sq+=a.sq;const c=cnt(d.sq);if(!d.r&&c.s>=3&&a.sq==='S'){d.r='K';d.base=0}if(!d.r&&c.b>=4){d.r='BB';d.base=1}}return drawPA()}
-  if(a.base!=null){d.base=+a.base;return drawPA()}
+  if(a.base!=null){d.base=+a.base;delete d.roAt;d.ro=0;return drawPA()}
+  if(a.roat){const k=+a.roat;if(d.roAt===k){delete d.roAt;d.ro=0}else{d.roAt=k;d.ro=1;d.base=Math.max(1,k-1)}return drawPA()}
   if(a.st){const[k,v]=a.st.split(':');d[k]=Math.max(0,Math.min(k==='rbi'?4:3,(d[k]||0)+ +v));if((k==='cs'||k==='ro')&&+v>0&&d.base===4)d.base=0;return drawPA()}
   const key=S.r+'-'+S.i;
   if(a.act==='ok'){const l=G.pa[key]||(G.pa[key]=[]);if(S.idx>=0)l[S.idx]=d;else{l.push(d);G.last.b={r:S.r,i:S.i}}closeSheet();render()}
