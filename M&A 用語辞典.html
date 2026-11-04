@@ -1,0 +1,263 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>M&amp;A 用語辞典</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@600;900&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 上に検索バー、下は「調べた用語の索引（左）」と「用語カード（右）」の2カラム。会社法版と同じ構成で、色だけ深緑×銅色に変えて区別する。 */
+:root{
+  --bg:#f2f5f3; --paper:#ffffff; --ink:#18261f; --muted:#56665d; --line:#d3ddd7;
+  --pine:#1f5a45; --pine-soft:#e2eee8; --copper:#b0602f; --copper-soft:#f6e8de;
+  --ng:#a33a3a; --ng-soft:#f8e4e4;
+  --display:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
+  --body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111814; --paper:#18211c; --ink:#e2eae5; --muted:#98a89f; --line:#2c3a33;
+  --pine:#7cc3a4; --pine-soft:#1b2e25; --copper:#e0915e; --copper-soft:#33231a;
+  --ng:#e48585; --ng-soft:#3a1d1d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111814; --paper:#18211c; --ink:#e2eae5; --muted:#98a89f; --line:#2c3a33;
+  --pine:#7cc3a4; --pine-soft:#1b2e25; --copper:#e0915e; --copper-soft:#33231a;
+  --ng:#e48585; --ng-soft:#3a1d1d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15.5px;line-height:1.8}
+.wrap{max-width:1100px;margin:0 auto;padding-block:24px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:14px}
+h1{font-family:var(--display);font-weight:900;font-size:clamp(1.8rem,4.5vw,2.6rem);margin:0;letter-spacing:.04em;line-height:1.2}
+header p{margin:4px 0 0;color:var(--muted);font-size:.92rem}
+.count{font-family:var(--mono);font-size:.8rem;color:var(--pine);border:1.5px solid var(--pine);padding:3px 10px;border-radius:3px}
+form.ask{display:flex;gap:8px;flex-wrap:wrap}
+form.ask input{flex:1 1 260px;min-width:0;font:inherit;font-size:1.05rem;padding:12px 16px;border:1.5px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}
+form.ask input:focus{outline:none;border-color:var(--pine)}
+.btn{font:inherit;font-weight:700;padding:10px 22px;border-radius:6px;border:1.5px solid var(--pine);background:var(--pine);color:var(--paper);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--pine)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible,.chip:focus-visible,.idx button:focus-visible,.cats button:focus-visible{outline:2px solid var(--copper);outline-offset:2px}
+.examples{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.82rem;color:var(--muted)}
+.chip{font:inherit;font-size:.82rem;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:3px 12px;border-radius:99px;cursor:pointer}
+.chip:hover{border-color:var(--pine);color:var(--pine)}
+.status{font-size:.88rem;padding:10px 14px;border-radius:6px;background:var(--pine-soft);color:var(--pine)}
+.status.err{background:var(--ng-soft);color:var(--ng)}
+.layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:28px;align-items:start}
+.idx{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;gap:8px}
+.idx input{font:inherit;font-size:.88rem;padding:7px 12px;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink);width:100%}
+.cats{display:flex;flex-wrap:wrap;gap:4px}
+.cats button{font:inherit;font-size:.72rem;border:1px solid var(--line);background:transparent;color:var(--muted);padding:1px 9px;border-radius:99px;cursor:pointer}
+.cats button[aria-pressed="true"]{background:var(--copper-soft);border-color:var(--copper);color:var(--copper);font-weight:700}
+.idx h2{font-size:.78rem;letter-spacing:.08em;color:var(--muted);margin:6px 0 0;font-weight:700}
+.idx ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:60vh;overflow-y:auto}
+.idx li button{width:100%;text-align:left;font:inherit;font-size:.92rem;background:transparent;border:0;border-left:2px solid var(--line);color:var(--ink);padding:6px 10px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+.idx li button small{color:var(--muted);font-size:.72rem;white-space:nowrap}
+.idx li button[aria-current="true"]{border-left-color:var(--pine);color:var(--pine);font-weight:700;background:var(--pine-soft)}
+.empty{color:var(--muted);font-size:.88rem;padding:8px 0}
+article{min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:26px clamp(18px,3vw,34px);display:flex;flex-direction:column;gap:22px}
+.thead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:1px solid var(--line);padding-bottom:14px}
+.thead h2{font-family:var(--display);font-size:clamp(1.6rem,4vw,2.2rem);margin:0;line-height:1.25;text-wrap:balance}
+.reading{font-size:.82rem;color:var(--muted)}
+.en{font-family:var(--mono);font-size:.78rem;color:var(--muted);margin-left:8px}
+.cat{display:inline-block;font-size:.72rem;font-weight:700;color:var(--copper);background:var(--copper-soft);padding:1px 10px;border-radius:99px;margin-top:6px}
+.summary{font-size:1.08rem;font-weight:500;margin:0;max-width:62ch;padding:12px 16px;background:var(--pine-soft);border-radius:6px}
+.blk h3{font-size:.8rem;letter-spacing:.1em;color:var(--pine);margin:0 0 8px;font-weight:700;display:flex;align-items:center;gap:8px}
+.blk h3::after{content:"";flex:1;height:1px;background:var(--line)}
+.blk p{margin:0;max-width:66ch}
+.calc{border:1px dashed var(--pine);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.calc .f{font-family:var(--mono);font-size:.9rem;color:var(--pine);background:var(--pine-soft);padding:6px 12px;border-radius:4px;overflow-x:auto;white-space:pre-wrap}
+.calc p{font-size:.92rem;font-variant-numeric:tabular-nums}
+.arts{display:flex;flex-direction:column;gap:6px}
+.art{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline;font-size:.92rem}
+.art code{font-family:var(--mono);font-size:.78rem;color:var(--pine);background:var(--pine-soft);padding:1px 7px;border-radius:3px;white-space:nowrap}
+.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.case{border:1px solid var(--line);border-radius:6px;padding:14px 16px;background:var(--bg);min-width:0}
+.case b{display:block;margin-bottom:4px;font-size:.95rem}
+.case p{font-size:.9rem;margin:0}
+.usage{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.usage li{border-left:3px solid var(--copper);background:var(--copper-soft);padding:8px 14px;font-size:.92rem;border-radius:0 4px 4px 0}
+.pit{margin:0;padding-left:1.2em;font-size:.92rem}
+.pit li{margin-bottom:4px}
+.pit li::marker{color:var(--ng)}
+.rel{display:flex;flex-wrap:wrap;gap:6px}
+.tfoot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid var(--line);padding-top:12px;font-size:.78rem;color:var(--muted)}
+.tfoot .acts{display:flex;gap:8px}
+.tfoot button{font:inherit;font-size:.8rem;background:transparent;border:1px solid var(--line);color:var(--muted);padding:3px 12px;border-radius:4px;cursor:pointer}
+.tfoot button.danger{color:var(--ng);border-color:var(--ng)}
+.welcome{color:var(--muted)}
+.welcome h2{font-family:var(--display);color:var(--ink);font-size:1.4rem;margin:0 0 6px}
+.welcome ol{margin:8px 0 0;padding-left:1.3em}
+@media (max-width:820px){.layout{grid-template-columns:minmax(0,1fr)}.idx{position:static;order:2}.idx ul{max-height:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>M&amp;A 用語辞典</h1>
+      <p>わからない言葉を入れると、意味・計算式・根拠・事例・使い方をまとめます。調べた用語は自動で保存されます。</p>
+    </div>
+    <span class="count" id="count">保存 0語</span>
+  </header>
+
+  <form class="ask" id="ask">
+    <input id="q" type="text" aria-label="調べたい言葉" placeholder="例：EV/EBITDA倍率、MAC条項、PMI" autocomplete="off">
+    <button class="btn" id="go" type="submit">調べる</button>
+    <button class="btn ghost" id="stop" type="button" hidden>止める</button>
+  </form>
+  <div class="examples" id="examples">よく出る言葉：</div>
+  <div class="status" id="status" hidden></div>
+
+  <div class="layout">
+    <aside class="idx">
+      <input id="filter" type="search" placeholder="保存済みから絞り込み">
+      <div class="cats" id="cats"></div>
+      <h2>調べた用語</h2>
+      <ul id="list"></ul>
+    </aside>
+    <article id="view">
+      <div class="welcome">
+        <h2>使い方</h2>
+        <ol>
+          <li>上の欄に、勉強や仕事で出てきたわからない言葉を入れて「調べる」</li>
+          <li>意味・計算式と数字の例・根拠（法令や会計基準）・事例・実務での使い方・注意点が出ます</li>
+          <li>「関連する言葉」を押すと、続けてその言葉を調べられます</li>
+          <li>調べた言葉は左の一覧に残り、分類ごとに絞り込めます</li>
+        </ol>
+      </div>
+    </article>
+  </div>
+</div>
+
+<script>
+const EX=["EV/EBITDA倍率","DCF法","WACC","ネットデット","表明保証","MAC条項","アーンアウト","ロックドボックス","LBO","PMI","のれん","デューデリジェンス"];
+const $=id=>document.getElementById(id);
+let sample=null, db=null, entries=[], current=null, ctl=null, catSel="";
+
+function idFor(term){let h=2166136261;for(const c of term.normalize("NFKC").trim()){h^=c.codePointAt(0);h=Math.imul(h,16777619)>>>0;}return "t"+h.toString(16);}
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
+function setStatus(msg,err){const s=$("status");if(!msg){s.hidden=true;return;}s.hidden=false;s.textContent=msg;s.classList.toggle("err",!!err);}
+
+EX.forEach(t=>{const b=el("button","chip",t);b.type="button";b.onclick=()=>lookup(t);$("examples").appendChild(b);});
+
+function renderCats(){
+  const box=$("cats");box.innerHTML="";
+  const cats=[...new Set(entries.map(e=>e.category).filter(Boolean))];
+  if(catSel&&!cats.includes(catSel))catSel="";
+  if(cats.length<2)return;
+  ["",...cats].forEach(c=>{const b=el("button",null,c||"すべて");b.type="button";b.setAttribute("aria-pressed",String(catSel===c));b.onclick=()=>{catSel=c;renderList();};box.appendChild(b);});
+}
+function renderList(){
+  renderCats();
+  const f=$("filter").value.trim();
+  const ul=$("list");ul.innerHTML="";
+  const shown=entries.filter(e=>(!catSel||e.category===catSel)&&(!f||e.term.includes(f)||(e.reading||"").includes(f)||(e.english||"").toLowerCase().includes(f.toLowerCase())||(e.category||"").includes(f)));
+  $("count").textContent=`保存 ${entries.length}語`;
+  if(!shown.length){ul.appendChild(el("li","empty",entries.length?"該当なし":"まだありません。上の欄から調べてみてください。"));return;}
+  shown.forEach(e=>{
+    const li=el("li");const b=el("button");b.type="button";
+    b.append(el("span",null,e.term),el("small",null,e.category||""));
+    b.setAttribute("aria-current",current&&current.term===e.term?"true":"false");
+    b.onclick=()=>show(e);li.appendChild(b);ul.appendChild(li);
+  });
+}
+$("filter").addEventListener("input",renderList);
+
+function show(e){
+  current=e;renderList();
+  const v=$("view");v.innerHTML="";
+  const head=el("div","thead");const l=el("div");
+  const rd=el("div","reading",e.reading||"");if(e.english)rd.appendChild(el("span","en",e.english));
+  if(e.reading||e.english)l.appendChild(rd);
+  l.appendChild(el("h2",null,e.term));
+  if(e.category)l.appendChild(el("span","cat",e.category));
+  head.appendChild(l);v.appendChild(head);
+  if(e.summary)v.appendChild(el("p","summary",e.summary));
+  const blk=(title,node)=>{const d=el("section","blk");d.appendChild(el("h3",null,title));d.appendChild(node);v.appendChild(d);};
+  if(e.explanation)blk("くわしく",el("p",null,e.explanation));
+  if(e.calc&&(e.calc.formula||e.calc.example)){const w=el("div","calc");if(e.calc.formula)w.appendChild(el("div","f",e.calc.formula));if(e.calc.example)w.appendChild(el("p",null,e.calc.example));blk("計算式と数字の例",w);}
+  if(e.basis?.length){const w=el("div","arts");e.basis.forEach(a=>{const r=el("div","art");r.append(el("code",null,a.source),el("span",null,a.point));w.appendChild(r);});blk("根拠（法令・会計基準・契約）",w);}
+  if(e.cases?.length){const w=el("div","cases");e.cases.forEach(c=>{const d=el("div","case");d.append(el("b",null,c.title),el("p",null,c.story));w.appendChild(d);});blk("事例",w);}
+  if(e.usage?.length){const w=el("ul","usage");e.usage.forEach(u=>w.appendChild(el("li",null,u)));blk("使い方・言い回し",w);}
+  if(e.pitfalls?.length){const w=el("ul","pit");e.pitfalls.forEach(u=>w.appendChild(el("li",null,u)));blk("注意点・混同しやすい点",w);}
+  if(e.related?.length){const w=el("div","rel");e.related.forEach(r=>{const b=el("button","chip",r);b.type="button";b.onclick=()=>lookup(r);w.appendChild(b);});blk("関連する言葉",w);}
+  const f=el("div","tfoot");
+  f.appendChild(el("span",null,(e.createdAt?new Date(e.createdAt).toLocaleDateString("ja-JP")+" に保存　":"")+"内容は学習用です。案件では原典と専門家で確認してください。"));
+  const acts=el("div","acts");
+  if(sample){const r=el("button",null,"調べ直す");r.type="button";r.onclick=()=>lookup(e.term,true);acts.appendChild(r);}
+  if(db){const d=el("button","danger","削除");d.type="button";d.onclick=async()=>{
+    if(d.dataset.arm!=="1"){d.dataset.arm="1";d.textContent="もう一度押すと削除";return;}
+    try{await db.collection("terms").doc(idFor(e.term)).delete();current=null;$("view").innerHTML='<div class="welcome"><h2>削除しました</h2></div>';}catch(_){setStatus("削除できませんでした。",true);}
+  };acts.appendChild(d);}
+  f.appendChild(acts);v.appendChild(f);
+  v.scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+}
+
+function prompt(term){
+return `あなたは日本のM&A実務・企業価値評価・企業財務に詳しい講師です。不動産会社で契約書や重要事項説明書を扱う社会人が、「企業を分析できる→投資判断ができる→会社を買収できる」の3段階でM&Aを勉強中に出会った言葉「${term}」を調べています。
+初学者にもわかる平易な日本語で、具体的に説明してください。M&A以外（会社法、会計、税務、金商法、ファイナンスなど）の用語なら、その分野で説明しつつM&Aでどう使われるかに触れてください。
+法令・会計基準の条項番号は確実なものだけを書き、自信がなければ basis は空配列にしてください。数字を扱う用語（倍率、評価手法、財務指標など）では calc に計算式と、仮の数字を使った計算例を必ず入れてください。数字を扱わない用語では calc を null にしてください。
+
+次の形のJSONオブジェクトだけを返してください。
+{
+ "term": "見出し語（正式な表記）",
+ "reading": "よみがな（ひらがな）",
+ "english": "英語表記（略語なら正式名も。なければ空文字）",
+ "category": "分類を次から一つ：企業価値評価／財務分析／M&Aスキーム／M&A契約／デューデリジェンス／ファイナンス／PMI／会計・税務／会社法・法務",
+ "summary": "一文での意味（60字以内）",
+ "explanation": "くわしい説明（200〜300字。なぜそれが必要か・どの場面で出てくるかも）",
+ "calc": {"formula":"計算式（例：EV ＝ 株式時価総額 ＋ 有利子負債 − 現預金）","example":"仮の数字での計算例（100〜150字）"} または null,
+ "basis": [{"source":"会社法467条 / 企業結合会計基準 など","point":"そこで何が決まっているか"}],
+ "cases": [{"title":"事例の見出し","story":"会社名を仮名にした具体的な場面（100〜150字）"}] を2つ。1つは不動産会社の買収や不動産業界の場面にすること,
+ "usage": ["実務の会話・資料・契約書での使われ方の例文"] を3つ,
+ "pitfalls": ["混同しやすい言葉との違いや、よくある誤解"] を2〜3つ,
+ "related": ["関連する用語"] を4〜6語
+}`;
+}
+
+async function lookup(raw,force){
+  const term=String(raw||"").trim();if(!term)return;
+  $("q").value=term;
+  const hit=entries.find(e=>e.term===term||e.query===term||idFor(e.term)===idFor(term));
+  if(hit&&!force){show(hit);setStatus("");return;}
+  if(!sample){setStatus("この画面ではClaudeに問い合わせできません。保存済みの用語のみ表示できます。",true);return;}
+  ctl?.abort();ctl=new AbortController();
+  $("go").disabled=true;$("stop").hidden=false;
+  setStatus(`「${term}」を調べています…（10〜40秒ほどかかります）`);
+  try{
+    const r=await sample.json(prompt(term),{signal:ctl.signal,cache:force?false:true});
+    if(!r||typeof r!=="object"||!r.term)throw{code:"invalid_json"};
+    const arr=x=>Array.isArray(x)?x:[];
+    const calc=r.calc&&typeof r.calc==="object"&&(r.calc.formula||r.calc.example)?{formula:String(r.calc.formula||""),example:String(r.calc.example||"")}:null;
+    const entry={term:String(r.term),query:term,reading:String(r.reading||""),english:String(r.english||""),category:String(r.category||""),summary:String(r.summary||""),explanation:String(r.explanation||""),calc,
+      basis:arr(r.basis).map(a=>({source:String(a.source||""),point:String(a.point||"")})).filter(a=>a.source),
+      cases:arr(r.cases).map(c=>({title:String(c.title||""),story:String(c.story||"")})),
+      usage:arr(r.usage).map(String),pitfalls:arr(r.pitfalls).map(String),related:arr(r.related).map(String),createdAt:Date.now()};
+    setStatus("");
+    if(db){try{await db.collection("terms").doc(idFor(entry.term)).set(entry);}catch(_){entries=[entry,...entries.filter(e=>e.term!==entry.term)];setStatus("表示はできましたが、保存できませんでした。",true);}}
+    else{entries=[entry,...entries.filter(e=>e.term!==entry.term)];}
+    show(entry);
+  }catch(e){
+    const c=e&&e.code;
+    if(c==="cancelled")setStatus("");
+    else if(c==="not_granted"||c==="sampling_disabled"){sample=null;setStatus("Claudeへの問い合わせが許可されていないため、新しい用語は調べられません。保存済みの用語は見られます。",true);}
+    else if(c==="rate_limited")setStatus("問い合わせが続いたため一時的に止まっています。少し待ってからもう一度どうぞ。",true);
+    else if(c==="refused")setStatus("この言葉は説明できませんでした。言い方を変えて試してください。",true);
+    else setStatus("うまく取得できませんでした。もう一度「調べる」を押してください。",true);
+  }finally{$("go").disabled=false;$("stop").hidden=true;}
+}
+$("ask").addEventListener("submit",ev=>{ev.preventDefault();lookup($("q").value);});
+$("stop").onclick=()=>ctl?.abort();
+
+renderList();
+(async()=>{
+  const c=window.claude;
+  if(!c){setStatus("この画面ではClaudeに接続できません。",true);return;}
+  c.use("sample").then(s=>{sample=s;if(!s)setStatus("この画面ではClaudeに問い合わせできません。保存済みの用語のみ表示できます。",true);});
+  db=await c.use("db");
+  if(!db)return;
+  db.collection("terms").orderBy("createdAt","desc").onSnapshot(snap=>{
+    entries=snap.docs.map(d=>d.data());
+    if(current){const u=entries.find(e=>e.term===current.term);if(u)current=u;}
+    renderList();
+  },()=>{});
+})();
+</script>
+
+</body></html>
