@@ -1,0 +1,538 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>ブラスト計測ノート</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: phone-first single column; sticky header + tab bar; panels swap per tab; readouts in condensed sensor digits */
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --sunk:#e8ece6; --line:#d3d9d0;
+  --fg:#18201b; --muted:#5c665f; --accent:#1f6f4a; --accent-ink:#ffffff;
+  --signal:#d9731a; --up:#1f7a45; --down:#b3402a;
+  --f-num:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121714; --surface:#1a211d; --sunk:#232c26; --line:#334037;
+  --fg:#e6ece7; --muted:#9aa79e; --accent:#4cbf86; --accent-ink:#0d1a12;
+  --signal:#f0954a; --up:#5fd08f; --down:#f08068; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121714; --surface:#1a211d; --sunk:#232c26; --line:#334037;
+  --fg:#e6ece7; --muted:#9aa79e; --accent:#4cbf86; --accent-ink:#0d1a12;
+  --signal:#f0954a; --up:#5fd08f; --down:#f08068; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 0;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.02em;text-wrap:balance}
+.brand .sub{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:2px;margin-top:10px;overflow-x:auto}
+.tabs button{flex:1 0 auto;background:none;border:0;border-bottom:3px solid transparent;padding:8px 12px;font:inherit;font-weight:500;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent);font-weight:700}
+.tabs button:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.panel{display:grid;gap:18px;padding-top:18px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.field{display:grid;gap:4px;min-width:0}
+.field>span{font-size:12px;color:var(--muted);letter-spacing:.04em}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-width:0;width:100%}
+textarea{min-height:60px;resize:vertical}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn{border:0;border-radius:8px;padding:11px 18px;font:inherit;font-weight:700;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line);font-weight:500}
+.btn.small{padding:6px 10px;font-size:13px}
+.btn.danger{background:transparent;color:var(--down);border:1px solid var(--line);font-weight:500}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.metrics{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.metric{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:2px}
+.metric label{font-size:12px;color:var(--muted)}
+.metric .in{display:flex;align-items:baseline;gap:6px}
+.metric input{border:0;padding:0;background:transparent;font-family:var(--f-num);font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;border-radius:0}
+.metric input:focus-visible{outline:none}
+.metric:focus-within{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.metric .u{font-size:12px;color:var(--muted);white-space:nowrap}
+.metric.key{border-color:var(--signal)}
+.metric.key label{color:var(--signal);font-weight:700}
+details.more summary{cursor:pointer;color:var(--muted);font-size:13px;padding-block:4px}
+details.more .metrics{margin-top:10px}
+.unit{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.unit button{border:0;background:var(--surface);color:var(--muted);padding:6px 10px;font:inherit;font-size:13px;cursor:pointer}
+.unit button[aria-pressed="true"]{background:var(--fg);color:var(--bg);font-weight:700}
+.h2{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.08em;margin:0}
+.note{font-size:12px;color:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:20}
+.list{display:grid;gap:0;border-top:1px solid var(--line)}
+.li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.li .nm{flex:1;min-width:0;font-weight:500}
+.li .bs{font-family:var(--f-num);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.tag{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+th{font-weight:500;color:var(--muted);font-size:12px;cursor:pointer;user-select:none;background:var(--sunk)}
+th[data-sorted]{color:var(--fg);font-weight:700}
+td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:inherit}
+td:first-child{background:var(--surface);font-weight:500}
+tr:last-child td{border-bottom:0}
+td.num{font-family:var(--f-num);font-size:17px;font-variant-numeric:tabular-nums}
+td.lead{color:var(--signal);font-weight:700}
+.d{font-size:12px;margin-left:4px;font-family:var(--f-body)}
+.d.up{color:var(--up)}.d.down{color:var(--down)}
+.empty{border:1px dashed var(--line);border-radius:10px;padding:22px 16px;color:var(--muted);text-align:center;font-size:14px}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px}
+.chart svg{display:block;width:100%;height:auto}
+.stats{display:flex;gap:22px;flex-wrap:wrap}
+.stat .k{font-size:12px;color:var(--muted)}
+.stat .v{font-family:var(--f-num);font-size:30px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .v small{font-size:14px;color:var(--muted);font-family:var(--f-body);margin-left:3px}
+.banner{background:var(--sunk);border-radius:8px;padding:8px 12px;font-size:13px}
+.editing{border-left:3px solid var(--signal);padding-left:10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>ブラスト計測ノート</h1><span class="sub">堺イーグルス ・ Blast Motion 定期計測</span></div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="input" aria-selected="true">入力</button>
+      <button role="tab" data-tab="session" aria-selected="false">計測日の一覧</button>
+      <button role="tab" data-tab="trend" aria-selected="false">個人推移</button>
+      <button role="tab" data-tab="roster" aria-selected="false">選手</button>
+    </nav>
+  </header>
+
+  <div id="status" class="banner" hidden style="margin-top:14px"></div>
+
+  <!-- 入力 -->
+  <section class="panel" id="p-input">
+    <div class="row">
+      <label class="field" style="flex:1 1 150px"><span>計測日</span><input type="date" id="in-date"></label>
+      <div class="field"><span>速度の単位</span>
+        <div class="unit" id="unitToggle"><button data-u="kmh" aria-pressed="true">km/h</button><button data-u="mph" aria-pressed="false">mph</button></div>
+      </div>
+    </div>
+    <div class="field"><span>チーム</span><div class="chips" id="in-teams"></div></div>
+    <label class="field"><span>選手</span><select id="in-player"></select></label>
+    <div id="editNote" class="banner editing" hidden></div>
+
+    <div class="field"><span>入力のしかた</span>
+      <div class="unit" id="modeToggle"><button data-m="swing" aria-pressed="false">1球ずつ入力</button><button data-m="avg" aria-pressed="true">平均をまとめて入力</button></div>
+    </div>
+
+    <div id="swingMode" class="sw" hidden>
+      <div class="field"><span>1球ごとに入れる項目（タップで追加・解除）</span><div class="chips" id="sw-cols"></div></div>
+      <div class="sw-entry">
+        <div class="metrics" id="sw-inputs"></div>
+        <button class="btn addbtn" id="sw-add">＋ 1球目を追加</button>
+      </div>
+      <div id="sw-sum"></div>
+      <div id="sw-list"></div>
+    </div>
+
+    <div id="avgMode">
+      <div class="metrics" id="coreMetrics"></div>
+      <details class="more"><summary>詳細項目（VBA・コネクション・パワー）</summary><div class="metrics" id="moreMetrics"></div></details>
+    </div>
+    <label class="field"><span>メモ</span><textarea id="in-memo" placeholder="例：スタンス変更後1回目、右足の踏み込みを意識"></textarea></label>
+    <div class="row">
+      <button class="btn" id="saveBtn">保存する</button>
+      <button class="btn ghost" id="clearBtn">クリア</button>
+      <span class="note" id="saveNote">同じ日・同じ選手で保存すると上書きされます。数値はスイングの平均値を入れてください。</span>
+    </div>
+
+    <div style="display:grid;gap:8px">
+      <p class="h2" id="todayHead">この日の入力済み</p>
+      <div id="todayList"></div>
+    </div>
+  </section>
+
+  <!-- 計測日の一覧 -->
+  <section class="panel" id="p-session" hidden>
+    <div class="row">
+      <label class="field" style="flex:1 1 160px"><span>計測日</span><select id="ss-date"></select></label>
+    </div>
+    <div class="field"><span>チーム</span><div class="chips" id="ss-teams"></div></div>
+    <div id="ssBody"></div>
+    <p class="note">見出しをタップで並べ替え。矢印はその選手の前回計測との差です。</p>
+  </section>
+
+  <!-- 個人推移 -->
+  <section class="panel" id="p-trend" hidden>
+    <div class="row">
+      <label class="field" style="flex:1 1 160px"><span>選手</span><select id="tr-player"></select></label>
+      <label class="field" style="flex:1 1 160px"><span>項目</span><select id="tr-metric"></select></label>
+    </div>
+    <div id="trBody"></div>
+  </section>
+
+  <!-- 選手 -->
+  <section class="panel" id="p-roster" hidden>
+    <div class="row">
+      <label class="field" style="flex:2 1 160px"><span>選手名（フルネーム推奨）</span><input id="rs-name" placeholder="例：園崎 太郎"></label>
+      <label class="field" style="flex:1 1 120px"><span>チーム</span><select id="rs-team"></select></label>
+      <button class="btn" id="rs-add">追加</button>
+    </div>
+    <div id="rsList"></div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const TEAMS=[{k:"REG",n:"レギュラー"},{k:"JR",n:"ジュニア"},{k:"SJ",n:"スーパージュニア"}];
+const teamName=k=>(TEAMS.find(t=>t.k===k)||{n:k}).n;
+// speed fields stored canonically in km/h
+const METRICS=[
+ {k:"batSpeed",n:"バットスピード（平均）",s:"BS平均",u:"speed",d:1,core:1,key:1},
+ {k:"batSpeedMax",n:"バットスピード（最高）",s:"BS最高",u:"speed",d:1,core:1},
+ {k:"handSpeed",n:"ピークハンドスピード",s:"ハンド",u:"speed",d:1,core:1},
+ {k:"rotAcc",n:"回転加速度",s:"回転加速",u:"g",d:1,core:1},
+ {k:"attackAngle",n:"アタックアングル",s:"アタック角",u:"°",d:0,core:1},
+ {k:"onPlane",n:"オンプレーン効率",s:"オンプレーン",u:"%",d:0,core:1},
+ {k:"ttc",n:"インパクトまでの時間",s:"TTC",u:"秒",d:3,core:1,lowBetter:1},
+ {k:"swings",n:"スイング数",s:"本数",u:"本",d:0,core:1},
+ {k:"vba",n:"垂直バット角度",s:"VBA",u:"°",d:0},
+ {k:"earlyConn",n:"アーリーコネクション",s:"EC",u:"°",d:0},
+ {k:"connImpact",n:"インパクト時コネクション",s:"CI",u:"°",d:0},
+ {k:"power",n:"パワー",s:"パワー",u:"kW",d:2},
+];
+const MPH=1.609344;
+let unit="kmh";
+try{unit=localStorage.getItem("blast-unit")||"kmh"}catch(e){}
+const uLabel=m=>m.u==="speed"?(unit==="kmh"?"km/h":"mph"):m.u;
+const toDisp=(m,v)=>v==null?null:(m.u==="speed"&&unit==="mph"?v/MPH:v);
+const fromDisp=(m,v)=>m.u==="speed"&&unit==="mph"?v*MPH:v;
+const fmt=(m,v)=>{if(v==null||isNaN(v))return"—";const x=toDisp(m,v);return x.toFixed(m.u==="speed"?1:m.d)};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $=id=>document.getElementById(id);
+const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+const jpDate=s=>{if(!s)return"";const[y,m,d]=s.split("-");const w="日月火水木金土"[new Date(+y,+m-1,+d).getDay()];return `${+m}/${+d}（${w}）`};
+
+let db=null,canWrite=true,players=[],rows=[];
+let inTeam="REG",ssTeam="ALL",ssSort={k:"batSpeed",dir:-1},editingId=null;
+
+function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>el.hidden=true,2200)}
+function status(t){const el=$("status");el.textContent=t||"";el.hidden=!t}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+function showTab(t){
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===t));
+  ["input","session","trend","roster"].forEach(k=>$("p-"+k).hidden=k!==t);
+  renderAll();
+}
+
+/* ---------- unit toggle ---------- */
+function syncUnit(){document.querySelectorAll("#unitToggle button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.u===unit))}
+document.querySelectorAll("#unitToggle button").forEach(b=>b.onclick=()=>{
+  const vals=readForm();unit=b.dataset.u;try{localStorage.setItem("blast-unit",unit)}catch(e){}
+  syncUnit();buildMetricInputs();buildSwEntry();fillForm(vals);renderAll();
+});
+
+/* ---------- form ---------- */
+function buildMetricInputs(){
+  const card=m=>`<div class="metric${m.key?" key":""}"><label for="m-${m.k}">${m.n}</label><div class="in"><input id="m-${m.k}" type="number" inputmode="decimal" step="any" placeholder="—"><span class="u">${uLabel(m)}</span></div></div>`;
+  $("coreMetrics").innerHTML=METRICS.filter(m=>m.core).map(card).join("");
+  $("moreMetrics").innerHTML=METRICS.filter(m=>!m.core).map(card).join("");
+}
+function readForm(){const o={};METRICS.forEach(m=>{const el=$("m-"+m.k);if(!el)return;const v=el.value.trim();o[m.k]=v===""?null:fromDisp(m,parseFloat(v))});return o}
+function fillForm(o){METRICS.forEach(m=>{const el=$("m-"+m.k);if(!el)return;const v=o?o[m.k]:null;el.value=v==null?"":+toDisp(m,v).toFixed(m.u==="speed"?1:Math.max(m.d,1)>2?3:m.d===0?0:m.d)})}
+function clearForm(){fillForm(null);$("in-memo").value="";editingId=null;$("editNote").hidden=true}
+
+function renderTeamChips(el,cur,withAll,onPick){
+  const list=(withAll?[{k:"ALL",n:"全員"}]:[]).concat(TEAMS);
+  el.innerHTML=list.map(t=>`<button class="chip" data-k="${t.k}" aria-pressed="${t.k===cur}">${t.n}</button>`).join("");
+  el.querySelectorAll("button").forEach(b=>b.onclick=()=>onPick(b.dataset.k));
+}
+function sortedPlayers(team){return players.filter(p=>!team||team==="ALL"||p.team===team).sort((a,b)=>a.name.localeCompare(b.name,"ja"))}
+
+function renderInput(){
+  renderTeamChips($("in-teams"),inTeam,false,k=>{inTeam=k;renderInput()});
+  const sel=$("in-player"),prev=sel.value,ps=sortedPlayers(inTeam);
+  sel.innerHTML=ps.length?ps.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join(""):`<option value="">（このチームの選手がまだいません）</option>`;
+  if(ps.some(p=>p.id===prev))sel.value=prev;
+  $("saveBtn").disabled=!canWrite||!ps.length;
+  const date=$("in-date").value;
+  $("todayHead").textContent=`${jpDate(date)} の入力済み`;
+  const day=rows.filter(r=>r.date===date).sort((a,b)=>(b.batSpeed??0)-(a.batSpeed??0));
+  const bs=METRICS[0];
+  $("todayList").innerHTML=day.length?`<div class="list">${day.map(r=>`<div class="li"><span class="nm">${esc(r.name)}</span><span class="tag">${teamName(r.team)}</span><span class="bs">${fmt(bs,r.batSpeed)}</span><span class="note">${uLabel(bs)}</span><button class="btn ghost small" data-edit="${esc(r.id)}">編集</button></div>`).join("")}</div>`
+    :`<div class="empty">この日の記録はまだありません。<br>上で選手を選んで数値を入れ、「保存する」を押すとここに並びます。</div>`;
+  $("todayList").querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
+  renderSwList();
+}
+function startEdit(id){
+  const r=rows.find(x=>x.id===id);if(!r)return;
+  showTab("input");
+  $("in-date").value=r.date;inTeam=r.team;renderInput();$("in-player").value=r.playerId;
+  fillForm(r);$("in-memo").value=r.memo||"";editingId=id;
+  setMode(r.swingList&&r.swingList.length?"swing":"avg");
+  $("editNote").textContent=`${r.name}・${jpDate(r.date)} の記録を編集中`;$("editNote").hidden=false;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+$("in-date").addEventListener("change",renderInput);
+$("in-player").addEventListener("change",()=>{
+  const r=rows.find(x=>x.date===$("in-date").value&&x.playerId===$("in-player").value);
+  if(r){fillForm(r);$("in-memo").value=r.memo||"";editingId=r.id;$("editNote").textContent=`${r.name}・${jpDate(r.date)} は入力済みです（保存すると上書き）`;$("editNote").hidden=false}
+  else if(editingId){clearForm()}
+  if(mode==="swing")swReload();
+});
+$("clearBtn").onclick=()=>{
+  const b=$("clearBtn");
+  if(mode==="swing"&&swList.length){
+    if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="全球を消す？";setTimeout(()=>{b.dataset.armed="";b.textContent="クリア"},3000);return}
+    b.dataset.armed="";b.textContent="クリア";swList=[];saveDraft();renderSwList();
+  }
+  clearForm();
+};
+$("saveBtn").onclick=async()=>{
+  if(mode==="swing"){saveSwings();return}
+  if(!db)return;
+  const date=$("in-date").value,pid=$("in-player").value,p=players.find(x=>x.id===pid);
+  if(!date||!p){toast("計測日と選手を選んでください");return}
+  const vals=readForm();
+  if(vals.batSpeed==null&&vals.batSpeedMax==null){toast("バットスピードを入れてください");return}
+  const body={date,playerId:pid,name:p.name,team:p.team,memo:$("in-memo").value.trim(),updatedAt:Date.now(),...vals};
+  const id=`${date}_${pid}`;
+  // moved to a different date/player while editing → remove old doc
+  $("saveBtn").disabled=true;
+  try{
+    await db.collection("blast").doc(id).set(body);
+    if(editingId&&editingId!==id)await db.collection("blast").doc(editingId).delete();
+    toast(`${p.name} を保存しました`);clearForm();
+    // advance to next player in list
+    const ps=sortedPlayers(inTeam),i=ps.findIndex(x=>x.id===pid);
+    if(i>-1&&i<ps.length-1)$("in-player").value=ps[i+1].id;
+  }catch(e){handleWriteError(e)}
+  $("saveBtn").disabled=!canWrite;
+};
+function handleWriteError(e){
+  if(e&&e.code==="invalid_argument"){canWrite=false;status("このページの編集権限がないため、閲覧のみになっています。");renderAll()}
+  else if(e&&e.code==="quota_exceeded")toast("保存容量の上限に達しました。不要な記録を削除してください");
+  else toast("保存できませんでした。通信を確認してもう一度お試しください");
+}
+
+/* ---------- per-swing input ---------- */
+const SW_ALL=METRICS.filter(m=>!["swings","batSpeedMax"].includes(m.k));
+let mode="avg",swCols=["batSpeed","handSpeed","attackAngle"],drafts={},swList=[];
+try{mode=localStorage.getItem("blast-mode")||"avg";
+  const c=JSON.parse(localStorage.getItem("blast-swcols")||"null");if(Array.isArray(c)&&c.includes("batSpeed"))swCols=c;
+  drafts=JSON.parse(localStorage.getItem("blast-drafts")||"{}")||{}}catch(e){}
+const swKey=()=>`${$("in-date").value}_${$("in-player").value}`;
+function setMode(m){
+  mode=m;try{localStorage.setItem("blast-mode",m)}catch(e){}
+  document.querySelectorAll("#modeToggle button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===m));
+  $("avgMode").hidden=m!=="avg";$("swingMode").hidden=m!=="swing";
+  $("saveNote").textContent=m==="swing"?"1球ずつ追加して、最後に「保存する」。平均と最高値は自動で計算されます。":"同じ日・同じ選手で保存すると上書きされます。数値はスイングの平均値を入れてください。";
+  if(m==="swing")swReload();
+}
+document.querySelectorAll("#modeToggle button").forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+function buildSwEntry(){
+  $("sw-cols").innerHTML=SW_ALL.map(m=>`<button class="chip" data-c="${m.k}" aria-pressed="${swCols.includes(m.k)}"${m.k==="batSpeed"?" disabled":""}>${m.s}</button>`).join("");
+  $("sw-cols").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    const k=b.dataset.c;swCols=swCols.includes(k)?swCols.filter(x=>x!==k):SW_ALL.map(m=>m.k).filter(x=>x===k||swCols.includes(x));
+    try{localStorage.setItem("blast-swcols",JSON.stringify(swCols))}catch(e){}
+    buildSwEntry();renderSwList()});
+  const cols=SW_ALL.filter(m=>swCols.includes(m.k));
+  $("sw-inputs").innerHTML=cols.map(m=>`<div class="metric${m.key?" key":""}"><label for="sw-${m.k}">${m.s}</label><div class="in"><input id="sw-${m.k}" data-k="${m.k}" type="number" inputmode="decimal" step="any" placeholder="—" enterkeyhint="next"><span class="u">${uLabel(m)}</span></div></div>`).join("");
+  const ins=[...$("sw-inputs").querySelectorAll("input")];
+  ins.forEach((el,i)=>{if(i===ins.length-1)el.setAttribute("enterkeyhint","done");
+    el.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();if(i<ins.length-1)ins[i+1].focus();else addSwing()}})});
+}
+function saveDraft(){
+  const k=swKey();
+  if(swList.length||rows.some(r=>r.id===k))drafts[k]=swList;else delete drafts[k];
+  try{localStorage.setItem("blast-drafts",JSON.stringify(drafts))}catch(e){}
+}
+function swReload(){
+  const k=swKey(),r=rows.find(x=>x.id===k);
+  swList=drafts[k]?drafts[k].map(s=>({...s})):(r&&r.swingList?r.swingList.map(s=>({...s})):[]);
+  renderSwList();
+}
+function addSwing(){
+  if(!$("in-player").value){toast("選手を選んでください");return}
+  const s={};
+  $("sw-inputs").querySelectorAll("input").forEach(el=>{const v=el.value.trim();if(v==="")return;const m=METRICS.find(x=>x.k===el.dataset.k);const x=parseFloat(v);if(!isNaN(x))s[m.k]=fromDisp(m,x)});
+  if(s.batSpeed==null){toast("バットスピードを入れてください");$("sw-batSpeed").focus();return}
+  swList=[...swList,s];saveDraft();
+  $("sw-inputs").querySelectorAll("input").forEach(el=>el.value="");
+  $("sw-batSpeed").focus();renderSwList();
+}
+$("sw-add").onclick=addSwing;
+function renderSwList(){
+  if(mode!=="swing")return;
+  const k=swKey(),r=rows.find(x=>x.id===k);
+  if(!swList.length&&!drafts[k]&&r&&r.swingList)swList=r.swingList.map(s=>({...s}));
+  const cols=SW_ALL.filter(m=>swCols.includes(m.k)||swList.some(s=>s[m.k]!=null));
+  $("sw-add").textContent=`＋ ${swList.length+1}球目を追加`;
+  $("sw-add").disabled=!$("in-player").value;
+  if(!swList.length){
+    $("sw-sum").innerHTML="";
+    $("sw-list").innerHTML=`<div class="empty">数値を入れて「追加」を押すと、1球ずつここに並びます。<br>最後の項目で改行（Enter）を押しても追加できます。</div>`;return}
+  const bs=METRICS[0],mx=Math.max(...swList.map(s=>s.batSpeed));
+  const avg=k=>{const v=swList.map(s=>s[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
+  $("sw-sum").innerHTML=`<div class="stats">
+      <div class="stat"><div class="k">球数</div><div class="v">${swList.length}<small>球</small></div></div>
+      <div class="stat"><div class="k">BS平均</div><div class="v">${fmt(bs,avg("batSpeed"))}<small>${uLabel(bs)}</small></div></div>
+      <div class="stat"><div class="k">BS最高</div><div class="v">${fmt(bs,mx)}<small>${uLabel(bs)}</small></div></div>
+      ${cols.filter(m=>m.k!=="batSpeed").map(m=>`<div class="stat"><div class="k">${m.s}平均</div><div class="v">${fmt(m,avg(m.k))}<small>${uLabel(m)}</small></div></div>`).join("")}
+    </div>${drafts[k]?`<p class="note">まだ保存されていません（この端末に一時保存中）</p>`:r?`<p class="note">保存済みの記録です</p>`:""}`;
+  $("sw-list").innerHTML=`<div class="tblwrap"><table><thead><tr><th>球</th>${cols.map(m=>`<th>${m.s}<br><span style="font-weight:400">${uLabel(m)}</span></th>`).join("")}<th></th></tr></thead><tbody>${swList.map((s,i)=>`<tr><td>${i+1}</td>${cols.map(m=>`<td class="num${m.k==="batSpeed"&&s.batSpeed===mx?" lead":""}">${fmt(m,s[m.k])}</td>`).join("")}<td><button class="btn danger small" data-x="${i}" aria-label="${i+1}球目を消す">×</button></td></tr>`).reverse().join("")}</tbody></table></div>`;
+  $("sw-list").querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{swList=swList.filter((_,i)=>i!==+b.dataset.x);saveDraft();renderSwList()});
+}
+async function saveSwings(){
+  if(!db)return;
+  const date=$("in-date").value,pid=$("in-player").value,p=players.find(x=>x.id===pid);
+  if(!date||!p){toast("計測日と選手を選んでください");return}
+  if(!swList.length){toast("1球以上追加してください");return}
+  const id=`${date}_${pid}`;
+  const body={date,playerId:pid,name:p.name,team:p.team,memo:$("in-memo").value.trim(),updatedAt:Date.now()};
+  METRICS.forEach(m=>body[m.k]=null);
+  SW_ALL.forEach(m=>{const v=swList.map(s=>s[m.k]).filter(x=>x!=null);if(v.length)body[m.k]=v.reduce((a,b)=>a+b,0)/v.length});
+  body.batSpeedMax=Math.max(...swList.map(s=>s.batSpeed));body.swings=swList.length;body.swingList=swList.map(s=>({...s}));
+  $("saveBtn").disabled=true;
+  try{
+    await db.collection("blast").doc(id).set(body);
+    if(editingId&&editingId!==id)await db.collection("blast").doc(editingId).delete();
+    delete drafts[id];try{localStorage.setItem("blast-drafts",JSON.stringify(drafts))}catch(e){}
+    toast(`${p.name}（${swList.length}球）を保存しました`);clearForm();
+    const ps=sortedPlayers(inTeam),i=ps.findIndex(x=>x.id===pid);
+    if(i>-1&&i<ps.length-1)$("in-player").value=ps[i+1].id;
+    swList=[];swReload();
+  }catch(e){handleWriteError(e)}
+  $("saveBtn").disabled=!canWrite;
+}
+$("in-date").addEventListener("change",()=>{if(mode==="swing")swReload()});
+
+/* ---------- session view ---------- */
+function prevOf(r){
+  let best=null;for(const x of rows){if(x.playerId===r.playerId&&x.date<r.date&&(!best||x.date>best.date))best=x}return best;
+}
+function renderSession(){
+  const dates=[...new Set(rows.map(r=>r.date))].sort().reverse();
+  const sel=$("ss-date"),prev=sel.value;
+  sel.innerHTML=dates.map(d=>`<option value="${d}">${jpDate(d)}　${d.slice(0,4)}</option>`).join("");
+  if(dates.includes(prev))sel.value=prev;
+  renderTeamChips($("ss-teams"),ssTeam,true,k=>{ssTeam=k;renderSession()});
+  if(!dates.length){$("ssBody").innerHTML=`<div class="empty">まだ計測記録がありません。「入力」タブで最初の計測を入れると、ここに日ごとの一覧が出ます。</div>`;return}
+  const d=sel.value;
+  let list=rows.filter(r=>r.date===d&&(ssTeam==="ALL"||r.team===ssTeam));
+  const cols=METRICS.filter(m=>m.core);
+  const sm=METRICS.find(m=>m.k===ssSort.k);
+  list.sort((a,b)=>{const av=a[ssSort.k],bv=b[ssSort.k];if(av==null)return 1;if(bv==null)return -1;return (av-bv)*ssSort.dir});
+  const top=Math.max(...list.map(r=>r.batSpeed??-1));
+  const avg=k=>{const v=list.map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
+  const delta=(m,r)=>{const p=prevOf(r);if(!p||p[m.k]==null||r[m.k]==null)return"";const dv=toDisp(m,r[m.k])-toDisp(m,p[m.k]);if(Math.abs(dv)<1e-9)return`<span class="d">±0</span>`;const good=m.lowBetter?dv<0:dv>0;const showGood=["attackAngle","vba","earlyConn","connImpact","swings"].includes(m.k)?null:good;return`<span class="d ${showGood===null?"":showGood?"up":"down"}">${dv>0?"▲":"▼"}${Math.abs(dv).toFixed(m.u==="speed"?1:m.d||1)}</span>`};
+  $("ssBody").innerHTML=list.length?`
+    <div class="stats">
+      <div class="stat"><div class="k">計測人数</div><div class="v">${list.length}<small>人</small></div></div>
+      <div class="stat"><div class="k">BS平均（全体）</div><div class="v">${fmt(METRICS[0],avg("batSpeed"))}<small>${uLabel(METRICS[0])}</small></div></div>
+      <div class="stat"><div class="k">ハンド平均</div><div class="v">${fmt(METRICS[2],avg("handSpeed"))}<small>${uLabel(METRICS[2])}</small></div></div>
+    </div>
+    <div class="tblwrap"><table><thead><tr><th data-k="name">選手</th>${cols.map(m=>`<th data-k="${m.k}"${ssSort.k===m.k?" data-sorted":""}>${m.s}<br><span style="font-weight:400">${uLabel(m)}</span>${ssSort.k===m.k?(ssSort.dir<0?" ↓":" ↑"):""}</th>`).join("")}</tr></thead>
+    <tbody>${list.map(r=>`<tr><td><button class="btn ghost small" style="border:0;padding:0;font-weight:500" data-tr="${esc(r.playerId)}">${esc(r.name)}</button>${ssTeam==="ALL"?` <span class="tag">${r.team}</span>`:""}</td>${cols.map(m=>`<td class="num${m.k==="batSpeed"&&r.batSpeed===top?" lead":""}">${fmt(m,r[m.k])}${delta(m,r)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`
+    :`<div class="empty">この日の${teamName(ssTeam)}の記録はありません。</div>`;
+  $("ssBody").querySelectorAll("th[data-k]").forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(k==="name")return;ssSort={k,dir:ssSort.k===k?-ssSort.dir:-1};renderSession()});
+  $("ssBody").querySelectorAll("[data-tr]").forEach(b=>b.onclick=()=>{$("tr-player").dataset.want=b.dataset.tr;showTab("trend")});
+}
+$("ss-date").addEventListener("change",renderSession);
+
+/* ---------- trend ---------- */
+$("tr-metric").innerHTML=METRICS.filter(m=>m.k!=="swings").map(m=>`<option value="${m.k}">${m.n}</option>`).join("");
+$("tr-player").addEventListener("change",renderTrend);$("tr-metric").addEventListener("change",renderTrend);
+function renderTrend(){
+  const sel=$("tr-player"),want=sel.dataset.want||sel.value;delete sel.dataset.want;
+  const ids=new Set(rows.map(r=>r.playerId));
+  const ps=sortedPlayers("ALL").filter(p=>ids.has(p.id));
+  // include players that only exist in rows (deleted from roster)
+  rows.forEach(r=>{if(!ps.some(p=>p.id===r.playerId))ps.push({id:r.playerId,name:r.name,team:r.team})});
+  sel.innerHTML=ps.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}（${teamName(p.team)}）</option>`).join("");
+  if(ps.some(p=>p.id===want))sel.value=want;
+  if(!ps.length){$("trBody").innerHTML=`<div class="empty">計測記録がたまると、選手ごとの伸びをグラフで確認できます。</div>`;return}
+  const m=METRICS.find(x=>x.k===$("tr-metric").value);
+  const hist=rows.filter(r=>r.playerId===sel.value).sort((a,b)=>a.date<b.date?-1:1);
+  const pts=hist.filter(r=>r[m.k]!=null).map(r=>({date:r.date,v:toDisp(m,r[m.k])}));
+  const first=pts[0],last=pts[pts.length-1],best=pts.length?(m.lowBetter?Math.min:Math.max)(...pts.map(p=>p.v)):null;
+  const dg=m.u==="speed"?1:(m.d||1);
+  const diff=pts.length>1?last.v-first.v:null;
+  $("trBody").innerHTML=`
+    <div class="stats">
+      <div class="stat"><div class="k">最新</div><div class="v">${last?last.v.toFixed(dg):"—"}<small>${uLabel(m)}</small></div></div>
+      <div class="stat"><div class="k">自己ベスト</div><div class="v">${best!=null?best.toFixed(dg):"—"}<small>${uLabel(m)}</small></div></div>
+      <div class="stat"><div class="k">初回からの変化</div><div class="v">${diff==null?"—":(diff>0?"+":"")+diff.toFixed(dg)}<small>${pts.length}回計測</small></div></div>
+    </div>
+    <div class="chart">${chartSVG(pts,m,dg)}</div>
+    <div class="tblwrap"><table><thead><tr><th>計測日</th>${METRICS.filter(x=>x.core).map(x=>`<th>${x.s}<br><span style="font-weight:400">${uLabel(x)}</span></th>`).join("")}<th>メモ</th><th></th></tr></thead>
+    <tbody>${hist.slice().reverse().map(r=>`<tr><td>${jpDate(r.date)}</td>${METRICS.filter(x=>x.core).map(x=>`<td class="num">${fmt(x,r[x.k])}</td>`).join("")}<td style="text-align:left;white-space:normal;min-width:140px">${esc(r.memo||"")}</td><td><button class="btn ghost small" data-edit="${esc(r.id)}">編集</button> <button class="btn danger small" data-del="${esc(r.id)}">削除</button></td></tr>`).join("")}</tbody></table></div>`;
+  $("trBody").querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
+  $("trBody").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
+    if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="本当に削除";setTimeout(()=>{b.dataset.armed="";b.textContent="削除"},3000);return}
+    try{await db.collection("blast").doc(b.dataset.del).delete();toast("削除しました")}catch(e){handleWriteError(e)}
+  });
+  $("trBody").querySelectorAll("button").forEach(b=>{if(!canWrite&&(b.dataset.del||b.dataset.edit))b.disabled=true});
+}
+function chartSVG(pts,m,dg){
+  if(!pts.length)return`<div class="empty" style="border:0">この項目の記録はまだありません。</div>`;
+  const W=640,H=240,L=46,R=18,T=18,B=34;
+  let lo=Math.min(...pts.map(p=>p.v)),hi=Math.max(...pts.map(p=>p.v));
+  if(hi-lo<1e-9){lo-=1;hi+=1}
+  const pad=(hi-lo)*.15;lo-=pad;hi+=pad;
+  const step=niceStep((hi-lo)/4);lo=Math.floor(lo/step)*step;hi=Math.ceil(hi/step)*step;
+  const x=i=>pts.length===1?L+(W-L-R)/2:L+i*(W-L-R)/(pts.length-1);
+  const y=v=>T+(hi-v)/(hi-lo)*(H-T-B);
+  let g="";for(let v=lo;v<=hi+1e-9;v+=step){g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)" font-family="var(--f-num)">${+v.toFixed(step<1?(step<.1?2:1):0)}</text>`}
+  const path=pts.map((p,i)=>`${i?"L":"M"}${x(i)},${y(p.v)}`).join("");
+  const area=pts.length>1?`<path d="${path}L${x(pts.length-1)},${H-B}L${x(0)},${H-B}Z" fill="var(--accent)" opacity=".10"/>`:"";
+  const every=Math.ceil(pts.length/7);
+  const labels=pts.map((p,i)=>(i%every===0||i===pts.length-1)?`<text x="${x(i)}" y="${H-12}" text-anchor="middle" font-size="12" fill="var(--muted)">${p.date.slice(5).replace("-","/")}</text>`:"").join("");
+  const dots=pts.map((p,i)=>{const lastp=i===pts.length-1;return`<circle cx="${x(i)}" cy="${y(p.v)}" r="${lastp?5.5:3.5}" fill="${lastp?"var(--signal)":"var(--surface)"}" stroke="${lastp?"var(--signal)":"var(--accent)"}" stroke-width="2"/>`}).join("");
+  const lp=pts[pts.length-1],lx=x(pts.length-1);
+  const lbl=`<text x="${Math.min(lx,W-R-4)}" y="${y(lp.v)-11}" text-anchor="${pts.length===1?"middle":"end"}" font-size="16" font-weight="700" fill="var(--signal)" font-family="var(--f-num)">${lp.v.toFixed(dg)}</text>`;
+  return`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(m.n)}の推移">${g}${area}<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>${dots}${lbl}${labels}</svg>`;
+}
+function niceStep(r){const p=Math.pow(10,Math.floor(Math.log10(r)));const f=r/p;return(f<=1?1:f<=2?2:f<=5?5:10)*p}
+
+/* ---------- roster ---------- */
+$("rs-team").innerHTML=TEAMS.map(t=>`<option value="${t.k}">${t.n}</option>`).join("");
+$("rs-add").onclick=async()=>{
+  const name=$("rs-name").value.trim().replace(/﨑/g,"崎");const team=$("rs-team").value;
+  if(!name){toast("選手名を入れてください");return}
+  if(players.some(p=>p.name===name&&p.team===team)){toast("同じ選手がすでに登録されています");return}
+  try{await db.collection("players").add({name,team,createdAt:Date.now()});$("rs-name").value="";toast(`${name} を追加しました`)}catch(e){handleWriteError(e)}
+};
+function renderRoster(){
+  $("rs-add").disabled=!canWrite;
+  if(!players.length){$("rsList").innerHTML=`<div class="empty">まず計測する選手を登録してください。<br>名前とチームを入れて「追加」を押すと、入力タブの選手リストに出ます。</div>`;return}
+  $("rsList").innerHTML=TEAMS.map(t=>{const ps=sortedPlayers(t.k);if(!ps.length)return"";return`<div style="display:grid;gap:6px"><p class="h2">${t.n}（${ps.length}人）</p><div class="list">${ps.map(p=>{const n=rows.filter(r=>r.playerId===p.id).length;return`<div class="li"><span class="nm">${esc(p.name)}</span><span class="note">${n}回計測</span><button class="btn danger small" data-rm="${esc(p.id)}"${canWrite?"":" disabled"}>外す</button></div>`}).join("")}</div></div>`}).join("");
+  $("rsList").querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{
+    if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="本当に外す";setTimeout(()=>{b.dataset.armed="";b.textContent="外す"},3000);return}
+    try{await db.collection("players").doc(b.dataset.rm).delete();toast("名簿から外しました（計測記録は残ります）")}catch(e){handleWriteError(e)}
+  });
+}
+
+/* ---------- render / boot ---------- */
+function renderAll(){
+  if(!$("p-input").hidden)renderInput();
+  if(!$("p-session").hidden)renderSession();
+  if(!$("p-trend").hidden)renderTrend();
+  if(!$("p-roster").hidden)renderRoster();
+}
+$("in-date").value=today();syncUnit();buildMetricInputs();buildSwEntry();setMode(mode);renderAll();
+status("データを読み込み中…");
+(async()=>{
+  db=await claude.use("db");
+  if(!db){status("記録の保存先に接続できません。claude.ai にサインインした状態で開いてください。");canWrite=false;renderAll();return}
+  status("");
+  const user=await claude.use("user");
+  const cw=user?await user.can("data.write"):null;
+  if(cw===false){canWrite=false;status("閲覧のみのアクセスです。記録の追加・編集はできません。")}
+  db.collection("players").onSnapshot(s=>{players=s.docs.map(d=>({id:d.id,...d.data()}));
+    if(players.length&&!players.some(p=>p.team===inTeam)){inTeam=players[0].team}
+    renderAll()},e=>status("選手名簿を読み込めませんでした。ページを開き直してください。"));
+  db.collection("blast").onSnapshot(s=>{rows=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()},e=>status("計測データを読み込めませんでした。ページを開き直してください。"));
+})();
+</script>
+
+</body></html>
