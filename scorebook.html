@@ -728,6 +728,28 @@ function csv(){
     G.pitch.map(ptot).forEach(p=>rows.push([G.game.date,G.game.opp,G.game.team,G.game.kind,p.name,p.role,ipStr(p.outs),p.np,p.st,p.fl,p.bl,pct(p.st,p.st+p.bl),p.ha,p.hr,p.bb,p.hbp,p.k,p.r,p.er,p.wp].join(',')));rows.push('');rows.push('守備の失策,捕逸');rows.push(defErr()+','+passed())}
   return rows.join('\n');
 }
+// ---- チームのスプレッドシートへ送信（Google Apps Script）
+const GAS_URL='https://script.google.com/macros/s/AKfycbypKytfG7h-P8DGY5EAvC-kL6n0jhVQ44sLnhHPOyAXk8akOWK6pJ0UiOrs_1mfSI1oCQ/exec';
+const GAS_TOKEN='Y3yl5r5CChuZu1lrncGF4kpM';
+function sheetPayload(){const g=G.game;
+  const bat=people().map(p=>{const s=personStat(p.name);if(!s.any)return null;
+    const a=splitStat(p.name,(x,i)=>handOf(x,i)==='R'),b=splitStat(p.name,(x,i)=>handOf(x,i)==='L'),c=splitStat(p.name,x=>x.risp);
+    return [g.date,g.opp,g.team,g.kind,String(p.r+1)+(p.type!=='先発'?p.type:''),normName(p.name),p.pos||'',s.pa,s.ab,s.h,s.d,s.t,s.hr,s.rbi,s.run,s.bb,s.hbp,s.so,s.sh,s.sf,s.sb,s.cs,s.ro,s.np,s.fl,a.ab,a.h,b.ab,b.h,c.pa,c.ab,c.h,c.rbi]}).filter(Boolean);
+  const pit=G.pitch.filter(p=>p.name).map(ptot).map(p=>[g.date,g.opp,g.team,g.kind,normName(p.name),p.role||'',ipStr(p.outs),p.outs,p.np,p.st,p.fl,p.bl,pct(p.st,p.st+p.bl),p.ha,p.hr,p.bb,p.hbp,p.k,p.r,p.er,p.wp]);
+  const sb=[];G.players.forEach((pl,r)=>{for(let i=1;i<=G.innings;i++)(G.pa[r+'-'+i]||[]).forEach(x=>{const rn=normName(rnOf(x,r,i));if((x.sb||x.cs)&&rn)sb.push([g.date,g.opp,g.team,g.kind,rn,i,x.sb||0,x.cs||0])})});
+  let err=0,pb=0;try{err=defErr();pb=passed()}catch(e){}
+  return {token:GAS_TOKEN,key:{date:g.date,opp:g.opp,team:g.team,kind:g.kind},bat,pit,sb,err,pb}}
+async function sendToSheet(btn){
+  if(!G.game.opp){toast('対戦相手を入力してから送ってください');return}
+  if(!G.game.date){toast('日付を入力してから送ってください');return}
+  btn.disabled=true;btn.textContent='送信中…';
+  try{const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(sheetPayload())});const j=await r.json();
+    if(!j.ok)throw new Error(j.error||'error');
+    btn.textContent='送信済み ✓';
+    const m=store.sent||(store.sent={});m[G.game.date+'|'+G.game.opp+'|'+G.game.team]=Date.now();persist();
+    toast(`スプレッドシートに送りました（打撃${j.res.bat}人・投手${j.res.pit}人）`);
+  }catch(e){btn.disabled=false;btn.textContent='スプレッドシートに送る';toast('送信できませんでした。電波を確認して、もう一度押してください')}}
+
 // ---- eagles.html 用データ（GAME_RECORDS / SB_LOG と同じ書式）
 const ARR={'ジュニア':['GAME_RECORDS','SB_LOG'],'レギュラー':['REG_GAME_RECORDS','REG_SB_LOG'],'スーパージュニア':['SJ_GAME_RECORDS','SJ_SB_LOG']};
 const appDate=d=>{const[y,m,dd]=d.split('-').map(Number);return{s:`${y}/${m}/${dd}`,m}};
@@ -766,6 +788,7 @@ $('bCsv').onclick=()=>{S=null;const g=G.game,[ga,sa]=ARR[g.team],{s}=appDate(g.d
   ${!g.opp?'<div class="warnbox">対戦相手が未入力です。入力してから送ってください。</div>':''}
   ${dup?'<div class="warnbox">この試合（日付・相手・チーム）はすでにアプリに登録されています。二重登録に注意してください。</div>':''}
   ${missing?'<div class="warnbox">名前のない打順に記録があります。その行は出力されません。</div>':''}
+  <div class="exp sendbox"><div class="shd"><div class="grp-l"><b>チームのスプレッドシートに送る</b><br><span class="muted">同じ試合（日付・相手・チーム）は上書きされます${(store.sent||{})[g.date+'|'+g.opp+'|'+g.team]?'。この試合は送信済みです':''}</span></div><button class="btn" id="bSend">スプレッドシートに送る</button></div></div>
   <div class="exp"><div class="shd"><div class="grp-l">打撃成績 → <b>${ga}</b> の末尾へ</div><button class="btn" data-copy="ex1">コピー</button></div><textarea id="ex1" readonly>${esc(rec)}</textarea></div>
   <div class="exp"><div class="shd"><div class="grp-l">盗塁・盗塁死 → <b>${sa}</b> の末尾へ</div><button class="btn" data-copy="ex2">コピー</button></div><textarea id="ex2" readonly>${esc(sb||'// この試合の盗塁・盗塁死はありません')}</textarea></div>
   ${rispRows('all')?`<div class="exp"><div class="shd"><div class="grp-l">得点圏 → <b>RISP_${RCODE[g.team]}</b> の同じ名前の行と置き換え</div><button class="btn" data-copy="ex7">コピー</button></div><textarea id="ex7" readonly>${esc(rispRows('all'))}</textarea></div>
@@ -778,7 +801,7 @@ $('bCsv').onclick=()=>{S=null;const g=G.game,[ga,sa]=ARR[g.team],{s}=appDate(g.d
   <p class="muted" style="margin:0">投手の通算行は、取り込み済みのシーズン成績にこの試合を足した値です。新しい投手は配列の末尾に追加してください。先発・救援別の表は更新されません。</p>`:''}
   <div class="exp"><div class="shd"><div class="grp-l">CSV（表計算用）</div><button class="btn" data-copy="ex3">コピー</button></div><textarea id="ex3" readonly>${esc(csv())}</textarea></div>`);
 };
-sh.addEventListener('click',e=>{const b=e.target.closest('[data-copy]');if(!b)return;const ta=$(b.dataset.copy);
+sh.addEventListener('click',e=>{const sb=e.target.closest('#bSend');if(sb){sendToSheet(sb);return}const b=e.target.closest('[data-copy]');if(!b)return;const ta=$(b.dataset.copy);
   const sel=()=>{ta.focus();ta.select();toast('選択しました。長押しでコピーしてください')};
   try{navigator.clipboard.writeText(ta.value).then(()=>toast('コピーしました'),sel)}catch(x){sel()}});
 
